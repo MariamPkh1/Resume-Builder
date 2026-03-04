@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .title { font-size: 22px; margin-bottom: 12px; }
+    .section { margin-bottom: 12px; }
+    .watermark {
+      position: fixed;
+      top: 45%;
+      left: 10%;
+      right: 10%;
+      text-align: center;
+      font-size: 48px;
+      opacity: 0.15;
+      transform: rotate(-20deg);
+      z-index: 0;
+    }
+    .content { position: relative; z-index: 1; }
+  </style>
+</head>
+<body>
+  {% if watermark %}
+    <div class="watermark">Made with Nebula</div>
+  {% endif %}
+
+  <div class="content">
+    <div class="title">{{ cv.title }}</div>
+
+    <div class="section">
+      <strong>Summary:</strong>
+      <div>{{ cv.cv_data.summary|default:"" }}</div>
+    </div>
+
+    <div class="section">
+      <strong>Raw cv_data:</strong>
+      <pre>{{ cv.cv_data|safe }}</pre>
+    </div>
+  </div>
+</body>
+</html>

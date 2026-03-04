@@ -1,0 +1,170 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "name": "John Doe",
+      "email": "user1@example.com",
+      "password": "ComplexPass123!",
+      "subscription_tier": "free",
+      "trial_start_date": "2026-02-01T10:00:00Z",
+      "trial_end_date": "2026-02-08T10:00:00Z",
+      "trial_used": true
+    },
+    {
+      "id": "2",
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "password": "abcdef@",
+      "subscription_tier": "free",
+      "trial_start_date": "2026-02-01T10:00:00Z",
+      "trial_end_date": "2026-02-08T10:00:00Z",
+      "trial_used": true
+    }
+  ],
+  "resumes": [
+    {
+      "id": "1",
+      "userId": "1",
+      "name": "Software Engineer - Google",
+      "lastEdited": "2026-02-05",
+      "template": "classic",
+      "personalInfo": {
+        "fullName": "John Doe1",
+        "jobTitle": "Full Stack Developer",
+        "email": "john.doe@example.com",
+        "phone": "+1 234 567 890",
+        "location": "New York, NY",
+        "linkedin": "linkedin.com/in/johndoe",
+        "photo": ""
+      },
+      "sections": [
+        {
+          "id": 101,
+          "type": "summary",
+          "title": "Professional Summary",
+          "content": "Innovative developer with 5 years of experience in building scalable web applications."
+        },
+        {
+          "id": 102,
+          "type": "experience",
+          "title": "Work Experience",
+          "items": [
+            {
+              "title": "Senior Developer",
+              "company": "Tech Corp",
+              "startDate": "2020-01",
+              "endDate": "Present",
+              "description": "Led a team of 5 to develop a cloud-based SaaS platform."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "userId": "2",
+      "name": "Product Designer - Spotify",
+      "lastEdited": "2023-10-10",
+      "template": "europass",
+      "personalInfo": {
+        "fullName": "Jane Smith",
+        "jobTitle": "Senior Product Designer",
+        "email": "jane@example.com",
+        "phone": "+44 7700 900000",
+        "location": "London, UK",
+        "linkedin": "",
+        "photo": ""
+      },
+      "sections": [
+        {
+          "id": 201,
+          "type": "summary",
+          "title": "About Me",
+          "content": "Creative designer focused on user-centric digital experiences."
+        },
+        {
+          "id": 202,
+          "type": "skills",
+          "title": "Skills",
+          "items": [
+            {
+              "name": "Figma"
+            },
+            {
+              "name": "UI/UX"
+            },
+            {
+              "name": "React"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "57db",
+      "userId": "2",
+      "template": "classic",
+      "title": "Untitled Classic Resume",
+      "personalInfo": {
+        "fullName": "Jane Smith",
+        "jobTitle": "",
+        "email": "jane@example.com",
+        "phone": "",
+        "location": "",
+        "linkedin": ""
+      },
+      "sections": [],
+      "createdAt": "2026-02-02T07:00:50.087Z"
+    },
+    {
+      "id": "f3bc",
+      "userId": "2",
+      "template": "classic",
+      "title": "Untitled Classic Resume",
+      "personalInfo": {
+        "fullName": "Jane Smith",
+        "jobTitle": "",
+        "email": "jane@example.com",
+        "phone": "",
+        "location": "",
+        "linkedin": ""
+      },
+      "sections": [],
+      "createdAt": "2026-02-02T07:00:56.972Z"
+    },
+    {
+      "id": "f32e",
+      "userId": "2",
+      "template": "europass",
+      "title": "Untitled Europass Resume",
+      "personalInfo": {
+        "fullName": "Jane Smith",
+        "jobTitle": "",
+        "email": "jane@example.com",
+        "phone": "",
+        "location": "",
+        "linkedin": ""
+      },
+      "sections": [],
+      "createdAt": "2026-02-02T07:01:02.620Z"
+    },
+    {
+      "id": "6f0b",
+      "userId": "1",
+      "template": "europass",
+      "title": "Untitled Europass Resume",
+      "personalInfo": {
+        "fullName": "John Doe 9",
+        "jobTitle": "Junior Front-end Developer",
+        "email": "user1@example.com",
+        "phone": "",
+        "location": "",
+        "linkedin": ""
+      },
+      "sections": [],
+      "createdAt": "2026-02-02T10:09:42.169Z",
+      "name": "Resume1",
+      "lastEdited": "2026-02-05"
+    }
+  ]
+}
