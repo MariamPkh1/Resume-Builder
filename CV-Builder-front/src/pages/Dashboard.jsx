@@ -10,7 +10,7 @@ import CreateLabelModal from "../components/dashboard/CreateLabelModal";
 import api from "../services/api";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
-
+// example
 const Dashboard = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
