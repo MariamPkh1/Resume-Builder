@@ -105,11 +105,13 @@ const Register = () => {
       </div>
 
       <div className="w-full max-w-[440px] animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="flex justify-center gap-3 mb-8">
+        {/* <div className="flex justify-center gap-3 mb-8">
           {[1, 2].map((i) => (
             <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${step >= i ? "w-8 bg-blue-600" : "w-4 bg-gray-200"}`} />
           ))}
-        </div>
+        </div> */} 
+        {/* blue-grey thing on top */}
+        
 
         <div className="bg-white p-10 rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-gray-50 text-center">
           <header className="mb-8">

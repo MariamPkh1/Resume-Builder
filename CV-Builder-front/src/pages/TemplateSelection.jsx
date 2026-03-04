@@ -229,17 +229,17 @@ const TemplateSelection = () => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "96px 24px 80px", /* 96px top = clears fixed navbar */
+        padding: "96px 24px 80px", 
         maxWidth: 1180,
         margin: "0 auto",
         width: "100%",
       }}>
 
         {/* Header */}
-        <div className="anim-1" style={{ textAlign: "center", marginBottom: 30, maxWidth: 500 }}>
+        <div className="anim-1" style={{ textAlign: "center", marginBottom: 25, maxWidth: 500 }}>
           <h1 style={{
             fontSize: 36, fontWeight: 800, color: "#0f172a",
-            letterSpacing: "-0.03em", lineHeight: 1.15, margin: "0 0 14px",
+            letterSpacing: "-0.03em", lineHeight: 1.15, margin: "5px 1px 14px",
           }}>
             Resume Templates
           </h1>

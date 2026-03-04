@@ -119,7 +119,7 @@ function ResumeMock() {
 const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [phase, setPhase] = useState("original"); // original | improving | improved
   const [heroVisible, setHeroVisible] = useState(false);
@@ -292,8 +292,10 @@ const Home = () => {
             {/* Headline */}
             <h1
               style={{
-                fontSize: "clamp(40px, 5vw, 62px)",
-                fontWeight: 900,
+                fontSize: language === "ka"
+                    ? "clamp(28px, 4.2vw, 48px)"   
+                    : "clamp(35px, 5vw, 62px)",
+                fontWeight: 800,
                 lineHeight: 1.06,
                 letterSpacing: "-0.03em",
                 color: "#0f172a",
@@ -329,7 +331,7 @@ const Home = () => {
             </p>
 
             {/* CTA Buttons */}
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 44 }}>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 44, marginTop: 60, }}>
               <button
                 className="primary-btn"
                 onClick={() => navigate(user ? "/app" : "/signup")}
@@ -382,7 +384,7 @@ const Home = () => {
             </div>
 
             {/* Stats */}
-            <div style={{ display: "flex", gap: 32 }}>
+            {/* <div style={{ display: "flex", gap: 32 }}>
               {[
                 { value: `${resumeCount}+`, label: "Resumes built" },
                 { value: `${atsRate}%`, label: "ATS pass rate" },
@@ -405,7 +407,7 @@ const Home = () => {
                   <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>{label}</div>
                 </div>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {/* Right — floating resume + AI tooltip */}

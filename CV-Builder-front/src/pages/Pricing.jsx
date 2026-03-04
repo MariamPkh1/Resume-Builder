@@ -240,7 +240,7 @@ const ProPlanCard = ({ plan, loading, onSelect, currentTier, t }) => {
       <BillingToggle isYearly={isYearly} onToggle={setIsYearly} t={t} />
 
       <div className="flex items-baseline gap-1 mb-1">
-        <span className="text-4xl font-black text-slate-900 tracking-tighter">{variant.price}</span>
+        <span className="text-3xl font-black text-slate-900 tracking-tighter">{variant.price}</span>
         <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">{variant.period}</span>
       </div>
 
@@ -326,7 +326,7 @@ const Pricing = () => {
 
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h1 className="text-5xl md:text-6xl font-black text-slate-900 mb-6 tracking-tighter leading-tight">
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight leading-snug">
               {t("pricing.heroTitle")}{" "}
               <span className="text-blue-600 italic">{t("pricing.heroTitleHighlight")}</span>
             </h1>

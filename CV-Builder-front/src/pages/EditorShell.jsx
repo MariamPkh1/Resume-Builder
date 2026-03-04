@@ -263,6 +263,34 @@ const EditorShell = ({
             ))}
           </div>
         </div>
+
+        {/* Mobile edit/preview toggle */}
+        <div className="md:hidden px-3 pb-2 pt-1">
+          <div className="inline-flex items-center bg-gray-100 border border-gray-200 p-0.5 rounded-full gap-0.5">
+            <button
+              type="button"
+              onClick={() => setShowMobilePreview(false)}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${
+                !showMobilePreview
+                  ? "bg-white text-gray-800 shadow-sm border border-gray-200"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMobilePreview(true)}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all ${
+                showMobilePreview
+                  ? "bg-white text-gray-800 shadow-sm border border-gray-200"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              Preview
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ── MAIN CONTENT ── */}
