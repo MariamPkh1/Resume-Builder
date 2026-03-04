@@ -35,6 +35,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+PDF_ENGINE_STRICT = os.getenv("PDF_ENGINE_STRICT", "0") in ["1", "true", "True"]
 
 # Application definition
 
@@ -71,8 +72,8 @@ MIDDLEWARE = [
 AUTH_USER_MODEL = "users.User"
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5174",
-    "http://127.0.0.1:8000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 REST_FRAMEWORK = {

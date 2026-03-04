@@ -1,19 +1,21 @@
-from rest_framework import viewsets, permissions
-from rest_framework.exceptions import PermissionDenied
-from .models import CV
-from .serializers import CVListSerializer, CVDetailSerializer
-from .permissions import IsOwner
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import status
-from apps.labels.models import Label
-from apps.cv_versions.models import CVVersion
-from apps.cv_versions.serializers import CVVersionSerializer, CVVersionDetailSerializer
-from apps.users.limits import limits_for_user
+from django.conf import settings
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-# from weasyprint import HTML
 from django.utils import timezone
+
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
+
+from .models import CV
+from .permissions import IsOwner
+from .serializers import CVDetailSerializer, CVListSerializer
+
+from apps.cv_versions.models import CVVersion
+from apps.cv_versions.serializers import CVVersionDetailSerializer, CVVersionSerializer
+from apps.labels.models import Label
+from apps.users.limits import limits_for_user
 
 
 class CVViewSet(viewsets.ModelViewSet):
@@ -60,8 +62,6 @@ class CVViewSet(viewsets.ModelViewSet):
             current = CV.objects.filter(user=request.user, is_archived=False).count()
             if current >= limits.max_cvs:
                 raise PermissionDenied("CV limit reached. Upgrade to duplicate/create more CVs.")
-
-
 
         new_cv = CV.objects.create(
             user=request.user,
@@ -134,7 +134,6 @@ class CVViewSet(viewsets.ModelViewSet):
     def save_version(self, request, pk=None):
         cv = self.get_object()
 
-        from apps.users.limits import limits_for_user
         limits = limits_for_user(request.user)
 
         if limits.max_versions == 0:
@@ -186,25 +185,29 @@ class CVViewSet(viewsets.ModelViewSet):
     def export_pdf(self, request, pk=None):
         cv = self.get_object()
 
-
         effective_tier = request.user.effective_tier() if hasattr(request.user, "effective_tier") else "free"
         is_free = effective_tier == "free"
 
-        request.user.pdfs_downloaded += 1
-        request.user.save(update_fields=["pdfs_downloaded"])
-
         try:
-            from django.template.loader import render_to_string
-            from django.http import HttpResponse
+            # Import here so environments without WeasyPrint can still run the server
             from weasyprint import HTML
 
-            html_string = render_to_string("cvs/pdf.html", {
-                "cv": cv,
-                "watermark": is_free,
-            })
+            html_string = render_to_string(
+                "cvs/pdf.html",
+                {
+                    "cv": cv,
+                    "watermark": is_free,
+                },
+            )
 
+            # 1) Generate PDF first
             pdf_bytes = HTML(string=html_string).write_pdf()
 
+            # 2) Increment counter ONLY after success
+            request.user.pdfs_downloaded += 1
+            request.user.save(update_fields=["pdfs_downloaded", "updated_at"])
+
+            # 3) Return real PDF response
             filename = f"{cv.title}.pdf".replace(" ", "_")
             response = HttpResponse(pdf_bytes, content_type="application/pdf")
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
@@ -214,20 +217,26 @@ class CVViewSet(viewsets.ModelViewSet):
             return response
 
         except Exception as e:
+            # Optional strict mode (useful later in production)
+            if getattr(settings, "PDF_ENGINE_STRICT", False):
+                payload = {"detail": "PDF export failed."}
+                if settings.DEBUG:
+                    payload["debug_error"] = str(e)
+                return Response(payload, status=status.HTTP_502_BAD_GATEWAY)
 
-            return Response(
-                {
-                    "detail": "PDF export stub (PDF engine not available on this machine yet).",
-                    "cv_id": str(cv.id),
-                    "title": cv.title,
-                    "ad_required": is_free,
-                    "watermark": is_free,
-                    "pdfs_downloaded": request.user.pdfs_downloaded,
-                    "pdf_engine_ready": False,
-                    "debug_error": str(e),  # remove in production
-                },
-                status=status.HTTP_200_OK,
-            )
+            # Fallback/stub response
+            payload = {
+                "detail": "PDF export stub (PDF engine not available on this machine yet).",
+                "cv_id": str(cv.id),
+                "title": cv.title,
+                "ad_required": is_free,
+                "watermark": is_free,
+                "pdfs_downloaded": request.user.pdfs_downloaded,  # unchanged on failure
+                "pdf_engine_ready": False,
+            }
 
+            # Only expose raw error during debug
+            if settings.DEBUG:
+                payload["debug_error"] = str(e)
 
-
+            return Response(payload, status=status.HTTP_200_OK)
