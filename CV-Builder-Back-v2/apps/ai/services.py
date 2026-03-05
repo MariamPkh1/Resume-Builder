@@ -9,23 +9,33 @@ def _safe_json_loads(text: str):
     except Exception:
         return None
 
+def _normalize_target_language(language_code: str | None, target_language: str | None = None):
+    code = (language_code or "").strip().lower()
+    if code == "ka":
+        return "ka", "Georgian"
+    # fallback for missing/blank/invalid
+    if target_language and target_language.strip():
+        return "en", "English"
+    return "en", "English"
 
-def analyze_cv_with_openai(cv, job_description: str = "") -> dict:
+
+def analyze_cv_with_openai(
+    cv,
+    job_description: str = "",
+    language_code: str = "en",
+    target_language: str = "English",
+) -> dict:
     """
     Returns:
     {
       "analysis": {...parsed JSON or fallback...},
-      "meta": {
-         "model_name": "...",
-         "prompt_tokens": int,
-         "completion_tokens": int,
-         "total_tokens": int,
-         "raw_text": str
-      }
+      "meta": {...}
     }
     """
     if not settings.OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY is not configured.")
+
+    language_code, target_language = _normalize_target_language(language_code, target_language)
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     model = getattr(settings, "OPENAI_MODEL", "gpt-4o-mini")
@@ -53,6 +63,9 @@ Rules:
 - Be practical and specific.
 - Mention quantified impact where appropriate.
 - Tailor advice to the target role if job_description is provided.
+- Response values (all feedback text and bullet points) must be entirely in {target_language}.
+- Keep JSON keys in English.
+- If the target language is Georgian, use natural professional Georgian terminology suitable for CV/career guidance (not literal machine-style phrasing).
 - Do not include markdown fences.
 - Return valid JSON only.
 
@@ -71,8 +84,8 @@ cv:
     )
 
     raw_text = getattr(response, "output_text", "") or ""
-
     parsed = _safe_json_loads(raw_text)
+
     if parsed is None:
         parsed = {
             "overall_score": 70,
@@ -97,20 +110,29 @@ cv:
         },
     }
 
-def improve_section_with_openai(cv, section_name: str, section_content: str, job_description: str = "") -> dict:
+def improve_section_with_openai(
+    cv,
+    section_name: str,
+    section_content: str,
+    job_description: str = "",
+    language_code: str = "en",
+    target_language: str = "English",
+) -> dict:
     """
     Returns:
     {
       "result": {
-         "improved_text": "...",
-         "alternative_versions": ["...", "..."],
-         "tips": ["...", "..."]
+        "improved_text": "...",
+        "alternative_versions": ["...", "..."],
+        "tips": ["...", "..."]
       },
       "meta": {...}
     }
     """
     if not settings.OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY is not configured.")
+
+    language_code, target_language = _normalize_target_language(language_code, target_language)
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     model = getattr(settings, "OPENAI_MODEL", "gpt-4o-mini")
@@ -138,6 +160,9 @@ Rules:
 - Make the writing clearer, more professional, and ATS-friendly.
 - If the section is too short, improve what exists and explain what is missing in tips.
 - Tailor to the target role if job_description is provided.
+- The response values (improved_text, alternatives, tips) must be entirely in {target_language}.
+- Keep JSON keys in English.
+- If the target language is Georgian, use natural professional Georgian terminology suitable for CV writing.
 - No markdown fences.
 - Valid JSON only.
 
@@ -187,22 +212,29 @@ job_description:
         },
     }
 
-def check_ats_with_openai(cv, job_description: str = "") -> dict:
+def check_ats_with_openai(
+    cv,
+    job_description: str = "",
+    language_code: str = "en",
+    target_language: str = "English",
+) -> dict:
     """
     Returns:
     {
       "result": {
-         "ats_score": <int 0-100>,
-         "issues": ["...", "..."],
-         "keyword_gaps": ["...", "..."],
-         "format_recommendations": ["...", "..."],
-         "section_recommendations": ["...", "..."]
+        "ats_score": <int 0-100>,
+        "issues": ["...", "..."],
+        "keyword_gaps": ["...", "..."],
+        "format_recommendations": ["...", "..."],
+        "section_recommendations": ["...", "..."]
       },
       "meta": {...}
     }
     """
     if not settings.OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY is not configured.")
+
+    language_code, target_language = _normalize_target_language(language_code, target_language)
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     model = getattr(settings, "OPENAI_MODEL", "gpt-4o-mini")
@@ -232,6 +264,10 @@ Rules:
 - Focus on ATS parsing/readability, keywords, section naming, and missing content.
 - If a job_description is provided, compare the CV against it and identify keyword gaps.
 - Do not invent facts.
+- The response values (all feedback and bullet points) must be entirely in {target_language}.
+- Keep JSON keys in English.
+- If the target language is Georgian, use natural professional Georgian terminology suitable for recruitment/CV analysis.
+- Technical keywords (e.g., Django, PostgreSQL, REST API) may remain in their original form where appropriate.
 - No markdown fences.
 - Return valid JSON only.
 
@@ -277,18 +313,21 @@ cv:
         },
     }
 
-def tailor_for_job_with_openai(cv, job_description: str, focus_sections=None) -> dict:
+def tailor_for_job_with_openai(
+    cv,
+    job_description: str,
+    focus_sections=None,
+    language_code: str = "en",
+    target_language: str = "English",
+) -> dict:
     """
     Returns:
     {
       "result": {
-         "tailored_summary": "...",
-         "keyword_targets": ["...", "..."],
-         "section_suggestions": {
-            "summary": ["...", "..."],
-            "experience": ["...", "..."]
-         },
-         "priority_actions": ["...", "..."]
+        "tailored_summary": "...",
+        "keyword_targets": ["...", "..."],
+        "section_suggestions": {...},
+        "priority_actions": ["...", "..."]
       },
       "meta": {...}
     }
@@ -296,6 +335,7 @@ def tailor_for_job_with_openai(cv, job_description: str, focus_sections=None) ->
     if not settings.OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY is not configured.")
 
+    language_code, target_language = _normalize_target_language(language_code, target_language)
     focus_sections = focus_sections or []
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -331,6 +371,10 @@ Rules:
 - If CV is missing key sections/content, say so clearly in suggestions.
 - Prioritize ATS-relevant keywords from the job description.
 - If focus_sections is provided, prioritize those sections.
+- The response values (all suggestions and drafts) must be entirely in {target_language}.
+- Keep JSON keys in English.
+- If the target language is Georgian, use natural professional Georgian terminology suitable for CV tailoring.
+- Technical keywords (e.g., Django, PostgreSQL, REST API) may remain in original form where appropriate.
 - No markdown fences.
 - Return valid JSON only.
 

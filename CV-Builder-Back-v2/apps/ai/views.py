@@ -1,13 +1,14 @@
-from rest_framework.views import APIView
+import logging
+
+from django.conf import settings
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
 
 from apps.cvs.models import CV
 from .models import AIUsage
 from .quotas import get_ai_quota_status
-from django.conf import settings
-
 from .serializers import (
     AnalyzeCVSerializer,
     ImproveSectionSerializer,
@@ -25,6 +26,20 @@ from .services import (
     generate_cover_letter_with_openai,
 )
 
+logger = logging.getLogger(__name__)
+
+
+def normalize_ai_language(lang_value) -> tuple[str, str]:
+    """
+    Returns:
+      (lang_code, target_language_name)
+    lang_code is normalized to 'en' or 'ka'
+    Invalid/missing/blank values fallback to English.
+    """
+    raw = (lang_value or "").strip().lower()
+    if raw == "ka":
+        return "ka", "Georgian"
+    return "en", "English"
 
 class AnalyzeCVAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -33,6 +48,9 @@ class AnalyzeCVAPIView(APIView):
         serializer = AnalyzeCVSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+
+        lang_code, target_language = normalize_ai_language(data.get("language"))
+        logger.info(f"AI Request | Endpoint: /api/ai/analyze-cv/ | Lang: {lang_code} | CV: {data.get('cv_id')}")
 
         try:
             cv = CV.objects.get(id=data["cv_id"], user=request.user)
@@ -50,6 +68,7 @@ class AnalyzeCVAPIView(APIView):
                 request_payload={
                     "cv_id": str(cv.id),
                     "job_description": data.get("job_description", ""),
+                    "language": lang_code,
                     "quota_denied": True,
                 },
                 error_message=quota["reason"],
@@ -66,6 +85,8 @@ class AnalyzeCVAPIView(APIView):
             ai_result = analyze_cv_with_openai(
                 cv=cv,
                 job_description=data.get("job_description", ""),
+                language_code=lang_code,
+                target_language=target_language,
             )
             analysis = ai_result["analysis"]
             meta = ai_result["meta"]
@@ -82,6 +103,7 @@ class AnalyzeCVAPIView(APIView):
                 request_payload={
                     "cv_id": str(cv.id),
                     "job_description": data.get("job_description", ""),
+                    "language": lang_code,
                 },
                 response_payload=analysis,
             )
@@ -123,6 +145,7 @@ class AnalyzeCVAPIView(APIView):
                 request_payload={
                     "cv_id": str(cv.id),
                     "job_description": data.get("job_description", ""),
+                    "language": lang_code,
                 },
                 error_message=str(e),
             )
@@ -133,7 +156,6 @@ class AnalyzeCVAPIView(APIView):
                 },
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-
 class ImproveSectionAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -141,6 +163,9 @@ class ImproveSectionAPIView(APIView):
         serializer = ImproveSectionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+
+        lang_code, target_language = normalize_ai_language(data.get("language"))
+        logger.info(f"AI Request | Endpoint: /api/ai/improve-section/ | Lang: {lang_code} | CV: {data.get('cv_id')}")
 
         try:
             cv = CV.objects.get(id=data["cv_id"], user=request.user)
@@ -158,6 +183,7 @@ class ImproveSectionAPIView(APIView):
                 request_payload={
                     "cv_id": str(cv.id),
                     "section_name": data["section_name"],
+                    "language": lang_code,
                     "quota_denied": True,
                 },
                 error_message=quota["reason"],
@@ -173,6 +199,8 @@ class ImproveSectionAPIView(APIView):
                 section_name=data["section_name"],
                 section_content=data["section_content"],
                 job_description=data.get("job_description", ""),
+                language_code=lang_code,
+                target_language=target_language,
             )
             result = ai_result["result"]
             meta = ai_result["meta"]
@@ -191,6 +219,7 @@ class ImproveSectionAPIView(APIView):
                     "section_name": data["section_name"],
                     "section_content": data["section_content"],
                     "job_description": data.get("job_description", ""),
+                    "language": lang_code,
                 },
                 response_payload=result,
             )
@@ -233,6 +262,7 @@ class ImproveSectionAPIView(APIView):
                 request_payload={
                     "cv_id": str(cv.id),
                     "section_name": data["section_name"],
+                    "language": lang_code,
                 },
                 error_message=str(e),
             )
@@ -252,6 +282,9 @@ class CheckATSAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
+        lang_code, target_language = normalize_ai_language(data.get("language"))
+        logger.info(f"AI Request | Endpoint: /api/ai/check-ats/ | Lang: {lang_code} | CV: {data.get('cv_id')}")
+
         try:
             cv = CV.objects.get(id=data["cv_id"], user=request.user)
         except CV.DoesNotExist:
@@ -267,6 +300,7 @@ class CheckATSAPIView(APIView):
                 success=False,
                 request_payload={
                     "cv_id": str(cv.id),
+                    "language": lang_code,
                     "quota_denied": True,
                 },
                 error_message=quota["reason"],
@@ -280,6 +314,8 @@ class CheckATSAPIView(APIView):
             ai_result = check_ats_with_openai(
                 cv=cv,
                 job_description=data.get("job_description", ""),
+                language_code=lang_code,
+                target_language=target_language,
             )
             result = ai_result["result"]
             meta = ai_result["meta"]
@@ -296,6 +332,7 @@ class CheckATSAPIView(APIView):
                 request_payload={
                     "cv_id": str(cv.id),
                     "job_description": data.get("job_description", ""),
+                    "language": lang_code,
                 },
                 response_payload=result,
             )
@@ -344,6 +381,7 @@ class CheckATSAPIView(APIView):
                 model_name=getattr(settings, "OPENAI_MODEL", ""),
                 request_payload={
                     "cv_id": str(cv.id),
+                    "language": lang_code,
                 },
                 error_message=str(e),
             )
@@ -364,6 +402,9 @@ class TailorForJobAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
+        lang_code, target_language = normalize_ai_language(data.get("language"))
+        logger.info(f"AI Request | Endpoint: /api/ai/tailor-for-job/ | Lang: {lang_code} | CV: {data.get('cv_id')}")
+
         try:
             cv = CV.objects.get(id=data["cv_id"], user=request.user)
         except CV.DoesNotExist:
@@ -379,6 +420,7 @@ class TailorForJobAPIView(APIView):
                 success=False,
                 request_payload={
                     "cv_id": str(cv.id),
+                    "language": lang_code,
                     "quota_denied": True,
                 },
                 error_message=quota["reason"],
@@ -393,6 +435,8 @@ class TailorForJobAPIView(APIView):
                 cv=cv,
                 job_description=data["job_description"],
                 focus_sections=data.get("focus_sections", []),
+                language_code=lang_code,
+                target_language=target_language,
             )
             result = ai_result["result"]
             meta = ai_result["meta"]
@@ -410,6 +454,7 @@ class TailorForJobAPIView(APIView):
                     "cv_id": str(cv.id),
                     "job_description": data["job_description"],
                     "focus_sections": data.get("focus_sections", []),
+                    "language": lang_code,
                 },
                 response_payload=result,
             )
@@ -450,6 +495,7 @@ class TailorForJobAPIView(APIView):
                 model_name=getattr(settings, "OPENAI_MODEL", ""),
                 request_payload={
                     "cv_id": str(cv.id),
+                    "language": lang_code,
                 },
                 error_message=str(e),
             )
