@@ -11,6 +11,7 @@ const translations = {
     "nav.logout": "Logout",
     "nav.getStarted": "Get Started",
     "nav.pricing": "Pricing",
+    "nav.contact": "Contact",
     "nav.langEnglish": "GB English",
     "nav.langGeorgian": "GE ქართული",
     // Resume section titles (for labels & PDF)
@@ -408,6 +409,15 @@ const translations = {
 "placeholder.educationDescription": "Relevant coursework or honors...",
 "placeholder.projectName": "e.g. Portfolio Website",
 "placeholder.projectDescription": "Describe what you built and the technologies used...",
+// CONTENT PAGE
+"contact.title": "Contact",
+"contact.subtitle": "Have a question or want to work together? Contact us anytime.",
+"contact.email": "Email",
+"contact.phone": "Phone",
+"contact.socialMedia": "Social Media",
+"contact.address": "Address",
+"contact.addressValue": "Kutaisi, St. Nino N4",
+"contact.mapTitle": "Kutaisi Location",
 
   },
   
@@ -418,6 +428,7 @@ const translations = {
     "nav.logout": "გასვლა",
     "nav.getStarted": "დაწყება",
     "nav.pricing": "ფასები",
+    "nav.contact": "კონტაქტი",
     "nav.langEnglish": "GB English",
     "nav.langGeorgian": "GE ქართული",
     "resume.experience": "გამოცდილება",
@@ -804,6 +815,15 @@ const translations = {
 "placeholder.educationDescription": "შესაბამისი კურსები ან პატივი...",
 "placeholder.projectName": "მაგ. პორტფოლიო საიტი",
 "placeholder.projectDescription": "აღწერეთ რა ააშენეთ და რა ტექნოლოგიები გამოიყენეთ...",
+// CONTENT PAGE
+"contact.title": "კონტაქტი",
+"contact.subtitle": "გაქვთ კითხვა ან გსურთ თანამშრომლობა? დაგვიკავშირდით ნებისმიერ დროს.",
+"contact.email": "ელფოსტა",
+"contact.phone": "ტელეფონი",
+"contact.socialMedia": "სოციალური მედია",
+"contact.address": "მისამართი",
+"contact.addressValue": "ქუთაისი, წმ. ნინოს N4",
+"contact.mapTitle": "ქუთაისის მდებარეობა",
 
   },
 };

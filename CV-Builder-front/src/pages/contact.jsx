@@ -2,142 +2,273 @@ import React from "react";
 import NavBar from "../components/NavBar";
 import Footer from "../components/Footer";
 import { Mail, Phone, MapPin, Facebook, Linkedin } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 const Contact = () => {
+  const { t } = useLanguage();
+
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#f8f9fb",
-      fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      overflowX: "hidden",
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f5f6f8",
+        fontFamily:
+          "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      }}
+    >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .cu-1 { animation: fadeUp 0.6s cubic-bezier(.22,1,.36,1) 0.05s both; }
-        .cu-2 { animation: fadeUp 0.6s cubic-bezier(.22,1,.36,1) 0.13s both; }
+      .contact-wrapper {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
 
-        .info-card {
-          background: white;
-          border: 1px solid #eef0f3;
-          border-radius: 16px;
-          padding: 20px 22px;
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          box-shadow: 0 1px 4px rgba(15,23,42,0.04);
-          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-          text-decoration: none;
-        }
-        .info-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(15,23,42,0.08);
-          border-color: #bfdbfe;
-        }
+      .contact-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        align-items: stretch;
+      }
 
-        .icon-pill {
-          width: 42px; height: 42px;
-          border-radius: 12px;
-          background: linear-gradient(135deg, #eff6ff, #e0e7ff);
-          border: 1px solid #c7d7fe;
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
-        }
+      .column {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        height: 100%;
+      }
 
-        .social-link {
-          width: 42px; height: 42px;
-          border-radius: 12px;
-          background: #f8fafc;
-          border: 1.5px solid #e8edf4;
-          display: flex; align-items: center; justify-content: center;
-          color: #64748b; text-decoration: none;
-          transition: all 0.2s;
-        }
-        .social-link:hover {
-          background: #eff6ff;
-          border-color: #bfdbfe;
-          color: #2563eb;
-          transform: translateY(-2px);
-        }
+      .info-card {
+        background: #fff;
+        border: 1px solid #e8eaed;
+        border-radius: 8px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: border-color .18s ease, box-shadow .18s ease;
+        flex: 1;
+      }
 
-        @media (max-width: 640px) {
-          .cu-section { padding: 96px 16px 60px !important; }
-          .cu-cards { max-width: 100% !important; }
+      .info-card:hover {
+        border-color: #bfdbfe;
+        box-shadow: 0 4px 16px rgba(59,130,246,0.07);
+      }
+
+      .icon-pill {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        background: #f0f4ff;
+        border: 1px solid #dce5ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #a0aec0;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        margin-bottom: 3px;
+      }
+
+      .value {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a202c;
+        line-height: 1.5;
+      }
+
+      .social-card {
+        background: #fff;
+        border: 1px solid #e8eaed;
+        border-radius: 8px;
+        padding: 16px 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .social-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .social-link {
+        width: 34px;
+        height: 34px;
+        border-radius: 6px;
+        border: 1px solid #e8eaed;
+        background: #fafafa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        text-decoration: none;
+        transition: all .18s ease;
+      }
+
+      .social-link:hover {
+        background: #f0f4ff;
+        border-color: #bfdbfe;
+        color: #2563eb;
+      }
+
+      .address-card {
+        background: #fff;
+        border: 1px solid #e8eaed;
+        border-radius: 8px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: border-color .18s ease;
+      }
+
+      .address-card:hover {
+        border-color: #bfdbfe;
+      }
+
+      .map-box {
+        flex: 1;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e8eaed;
+        min-height: 260px;
+      }
+
+      .map-box iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+
+      @media(max-width: 900px) {
+        .contact-grid {
+          grid-template-columns: 1fr;
         }
+      }
       `}</style>
 
       <NavBar />
 
-      <section className="cu-section" style={{ padding: "116px 24px 80px" }}>
-        <div style={{ maxWidth: 560, margin: "0 auto" }}>
+      <section style={{ padding: "120px 20px 80px" }}>
+        <div className="contact-wrapper">
 
           {/* Heading */}
-          <div className="cu-1" style={{ marginBottom: 36 }}>
-            <h1 style={{
-              fontSize: "clamp(22px, 3vw, 34px)",
-              fontWeight: 800, letterSpacing: "-0.025em",
-              color: "#0f172a", margin: "0 0 7px",
-            }}>
-              We'd love to{" "}
-              <span style={{
-                background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              }}>
-                hear from you
+          <div style={{ marginBottom: 36 }}>
+            <h1
+              style={{
+                fontSize: "clamp(22px, 3vw, 32px)",
+                fontWeight: 800,
+                color: "#0f172a",
+                marginBottom: 6,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              <span
+                style={{
+                  background: "linear-gradient(135deg,#3b82f6 0%,#6366f1 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                {t("contact.title")}
               </span>
             </h1>
-            <p style={{ fontSize: 14, color: "#64748b", margin: 0, lineHeight: 1.6 }}>
-              Have a question or want to work together? Drop us a message and we'll get back to you shortly.
+            <p style={{ color: "#64748b", fontSize: 14, margin: 0 }}>
+              {t("contact.subtitle")}
             </p>
           </div>
 
-          {/* Info cards */}
-          <div className="cu-2 cu-cards" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="contact-grid">
 
-            <a href="mailto:info@resumeflowai.com" className="info-card">
-              <div className="icon-pill"><Mail size={17} color="#3b82f6" /></div>
-              <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 2px" }}>Email</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", margin: 0 }}>info@resumeflowai.com</p>
-              </div>
-            </a>
+            {/* LEFT COLUMN */}
+            <div className="column">
 
-            <div className="info-card" style={{ cursor: "default" }}>
-              <div className="icon-pill"><Phone size={17} color="#3b82f6" /></div>
-              <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 2px" }}>Phone</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", margin: "0 0 1px" }}>+995 571 33 33 03</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", margin: 0 }}>+995 579 58 88 59</p>
+              {/* Email */}
+              <div className="info-card" style={{ flex: "0 0 auto", minHeight: 100 }}>
+                <div className="icon-pill">
+                  <Mail size={16} color="#3b82f6" />
+                </div>
+                <div>
+                  <div className="label">{t("contact.email")}</div>
+                  <div className="value">info@nebulahub.ai</div>
+                </div>
               </div>
+
+              {/* Phone + Social stacked */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+
+                <div className="info-card" style={{ flex: 1 }}>
+                  <div className="icon-pill">
+                    <Phone size={16} color="#3b82f6" />
+                  </div>
+                  <div>
+                    <div className="label">{t("contact.phone")}</div>
+                    <div className="value">+995 571 33 33 03</div>
+                    <div className="value">+995 579 58 88 59</div>
+                  </div>
+                </div>
+
+                <div className="social-card" style={{ flex: 1 }}>
+                  <div className="label">{t("contact.socialMedia")}</div>
+                  <div className="social-row">
+                    <a
+                      href="https://www.facebook.com/profile.php?id=61573891437689"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="social-link"
+                      aria-label="Facebook"
+                    >
+                      <Facebook size={15} />
+                    </a>
+                    <a
+                      href="https://www.linkedin.com/company/nebula-ai-hub/posts/?feedView=all"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="social-link"
+                      aria-label="LinkedIn"
+                    >
+                      <Linkedin size={15} />
+                    </a>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
 
-            <div className="info-card" style={{ cursor: "default" }}>
-              <div className="icon-pill"><MapPin size={17} color="#3b82f6" /></div>
-              <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 2px" }}>Address</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a", margin: 0 }}>Tbilisi, Georgia</p>
-              </div>
-            </div>
+            {/* RIGHT COLUMN */}
+            <div className="column">
 
-            {/* Social */}
-            <div style={{
-              background: "white", border: "1px solid #eef0f3",
-              borderRadius: 16, padding: "18px 22px",
-              boxShadow: "0 1px 4px rgba(15,23,42,0.04)",
-            }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 12px" }}>Social Media</p>
-              <div style={{ display: "flex", gap: 8 }}>
-                <a href="https://facebook.com" target="_blank" rel="noreferrer" className="social-link">
-                  <Facebook size={16} />
-                </a>
-                <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="social-link">
-                  <Linkedin size={16} />
-                </a>
+              <div className="address-card" style={{ flex: "0 0 auto", minHeight: 100 }}>
+                <div className="icon-pill">
+                  <MapPin size={16} color="#3b82f6" />
+                </div>
+                <div>
+                  <div className="label">{t("contact.address")}</div>
+                  <div className="value">{t("contact.addressValue")}</div>
+                </div>
               </div>
+
+              <div className="map-box">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d47237.02935788529!2d42.702797!3d42.271813!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x405c8ce30e54af2d%3A0x5fffe6dd67ced171!2s7PC3%2BP4F%2C%20Kutaisi!5e0!3m2!1sen!2sge!4v1772718537039!5m2!1sen!2sge"
+                  title={t("contact.mapTitle")}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+
             </div>
 
           </div>
