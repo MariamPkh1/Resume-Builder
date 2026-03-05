@@ -30,12 +30,37 @@ const Footer = () => {
         fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         padding: "56px 24px 28px",
         marginTop: 80,
+        boxSizing: "border-box",
+        width: "100%",
+        overflowX: "hidden",
       }}
     >
+      <style>{`
+        @media (max-width: 768px) {
+          .footer-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 32px !important;
+          }
+          .footer-brand {
+            grid-column: 1 / -1 !important;
+          }
+          .footer-bottom {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .footer-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
 
         {/* Top row */}
         <div
+          className="footer-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "2fr 1fr 1fr 1fr",
@@ -45,7 +70,7 @@ const Footer = () => {
           }}
         >
           {/* Brand */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          <div className="footer-brand" style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             <img
               src="/src/assets/logo3.svg"
               alt="logo"
@@ -125,6 +150,7 @@ const Footer = () => {
 
         {/* Bottom row */}
         <div
+          className="footer-bottom"
           style={{
             display: "flex",
             justifyContent: "space-between",

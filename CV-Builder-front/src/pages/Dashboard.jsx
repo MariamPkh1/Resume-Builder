@@ -144,7 +144,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleTabChange = (newTab) => { setTab(newTab); setFilterLabel(null); };
+  const handleTabChange = (newTab) => { setTab(newTab); setFilterLabel(null);  setResumes([]); };
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) return (

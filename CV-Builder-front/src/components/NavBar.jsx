@@ -3,14 +3,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
-  Sparkles,
   LayoutDashboard,
-  User,
   Zap
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
-import api from "../services/api";
 
 const NavBar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -35,6 +32,13 @@ const NavBar = () => {
   const isProMember = user?.subscription_tier === "pro" || 
     (user?.trial_end_date && new Date(user.trial_end_date) > new Date());
 
+  const navLinks = [
+    { name: t("nav.home"), path: "/" },
+    { name: t("nav.templates"), path: "/templates" },
+    { name: t("nav.pricing"), path: "/pricing" },
+    { name: "Contact", path: "/contact" },
+  ];
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
@@ -45,18 +49,11 @@ const NavBar = () => {
     >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-10">
-          {/* LOGO - Matching Header Style */}
-         <Link
+          {/* LOGO */}
+          <Link
             to="/"
             className="flex items-center gap-3 group transition-opacity"
           >
-            {/* <div className="relative">
-              <img
-                src="/src/assets/logo3.svg"
-                alt="logo"
-                className="h-14 w-14 transition-transform duration-300 group-hover:scale-110"
-              />
-            </div> */}
             <span className="text-2xl font-bold tracking-tight text-slate-900">
               ResumeFlow <span className="text-blue-600 font-black ml-0.5">AI</span>
             </span>
@@ -65,11 +62,7 @@ const NavBar = () => {
           {/* DESKTOP NAV */}
           <div className="hidden md:flex items-center gap-8">
             <div className="flex items-center gap-6">
-              {[
-                { name: t("nav.home"), path: "/" },
-                { name: t("nav.templates"), path: "/templates" },
-                { name: t("nav.pricing"), path: "/pricing" },
-              ].map((link) => (
+              {navLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
@@ -86,7 +79,7 @@ const NavBar = () => {
 
             <div className="w-[1px] h-4 bg-slate-100" />
 
-            {/* LANGUAGE TOGGLE - Thinner Style */}
+            {/* LANGUAGE TOGGLE */}
             <div className="flex items-center rounded-full border border-slate-100 bg-slate-50/50 p-1 text-[10px] font-black tracking-widest">
               <button
                 type="button"
@@ -106,7 +99,7 @@ const NavBar = () => {
 
             {user ? (
               <div className="flex items-center gap-4">
-                {/* PRO BADGE - Soft Blue */}
+                {/* PRO BADGE */}
                 <div
                   onClick={() => navigate("/pricing")}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full cursor-pointer transition-all border ${
@@ -150,16 +143,12 @@ const NavBar = () => {
 
       {/* MOBILE MENU */}
       <div
-        className={`md:hidden overflow-hidden transition-all duration-300 ${
-          scrolled ? "bg-white" : "bg-white"
-        } ${mobileMenuOpen ? "max-h-[400px] border-b border-slate-100 shadow-lg" : "max-h-0"}`}
+        className={`md:hidden overflow-hidden transition-all duration-300 bg-white ${
+          mobileMenuOpen ? "max-h-[400px] border-b border-slate-100 shadow-lg" : "max-h-0"
+        }`}
       >
         <div className="p-6 space-y-4">
-          {[
-            { name: t("nav.home"), path: "/" },
-            { name: t("nav.templates"), path: "/templates" },
-            { name: t("nav.pricing"), path: "/pricing" },
-          ].map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
@@ -177,14 +166,14 @@ const NavBar = () => {
               <div className="flex rounded-full border border-slate-200 bg-slate-50 p-0.5 text-[10px] font-bold">
                 <button
                   type="button"
-                  onClick={() => { handleLanguageSet("en"); }}
+                  onClick={() => handleLanguageSet("en")}
                   className={`rounded-full px-3 py-1 ${language === "en" ? "bg-white text-blue-600 shadow border-slate-100" : "text-slate-500"}`}
                 >
                   EN
                 </button>
                 <button
                   type="button"
-                  onClick={() => { handleLanguageSet("ka"); }}
+                  onClick={() => handleLanguageSet("ka")}
                   className={`rounded-full px-3 py-1 ${language === "ka" ? "bg-white text-blue-600 shadow border-slate-100" : "text-slate-500"}`}
                 >
                   ქარ

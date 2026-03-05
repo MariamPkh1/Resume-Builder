@@ -31,12 +31,12 @@ const EducationForm = ({ section, setResumeData, dragHandleProps, onDeleteSectio
   };
 
   const fields = [
-    { label: t("form.schoolUniversity"), key: "school", placeholder: "e.g. Harvard University" },
-    { label: t("form.degreeMajor"), key: "degree", placeholder: "e.g. Bachelor of Science" },
-    { label: t("form.city"), key: "city", placeholder: "e.g. London" },
-    { label: t("form.country"), key: "country", placeholder: "e.g. UK" },
-    { label: t("form.startDate"), key: "startDate", placeholder: "MM / YYYY" },
-    { label: t("form.endDate"), key: "endDate", placeholder: "MM / YYYY" },
+    { label: t("form.schoolUniversity"), key: "school", placeholder: t("placeholder.school") },
+    { label: t("form.degreeMajor"), key: "degree", placeholder: t("placeholder.degree") },
+    { label: t("form.city"), key: "city", placeholder: t("placeholder.city") },
+    { label: t("form.country"), key: "country", placeholder: t("placeholder.country") },
+    { label: t("form.startDate"), key: "startDate", placeholder: t("placeholder.date") },
+    { label: t("form.endDate"), key: "endDate", placeholder: t("placeholder.date") },
   ];
 
   return (
@@ -96,7 +96,7 @@ const EducationForm = ({ section, setResumeData, dragHandleProps, onDeleteSectio
               <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider ml-1">{t("form.description")}</label>
               <textarea
                 rows="3"
-                placeholder="Relevant coursework or honors..."
+                placeholder={t("placeholder.educationDescription")}
                 className="w-full p-2.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-all text-sm text-gray-800 placeholder:text-gray-300 resize-none leading-relaxed"
                 value={item.description || ""}
                 onChange={(e) => updateItem(item.id, "description", e.target.value)}

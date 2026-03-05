@@ -94,10 +94,10 @@ const buildPlans = (t) => [
 
 // ─── Trial Banner ─────────────────────────────────────────────────────────────
 const TrialBanner = ({ daysLeft, onDismiss, t }) => (
-  <div className="mb-10 mx-auto max-w-2xl bg-blue-50/50 border border-blue-100 rounded-2xl px-6 py-4 flex items-center justify-between gap-4">
-    <div className="flex items-center gap-3">
-      <Sparkles size={18} className="text-blue-600 shrink-0" />
-      <p className="text-sm font-medium text-slate-700">
+  <div className="mb-8 mx-auto max-w-xl bg-blue-50/50 border border-blue-100 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+    <div className="flex items-center gap-2">
+      <Sparkles size={14} className="text-blue-600 shrink-0" />
+      <p className="text-xs font-medium text-slate-700">
         {t("pricing.trialBanner")}{" "}
         <span className="font-black text-blue-600">
           {daysLeft} {daysLeft !== 1 ? t("pricing.trialBannerDaysPlural") : t("pricing.trialBannerDays")}
@@ -106,23 +106,23 @@ const TrialBanner = ({ daysLeft, onDismiss, t }) => (
       </p>
     </div>
     <button onClick={onDismiss} className="text-slate-400 hover:text-blue-600 transition-colors shrink-0">
-      <X size={16} />
+      <X size={13} />
     </button>
   </div>
 );
 
 // ─── Billing Toggle (Monthly / Yearly) ────────────────────────────────────────
 const BillingToggle = ({ isYearly, onToggle, t }) => (
-  <div className="flex justify-center mb-6">
+  <div className="flex justify-center mb-4">
     <div
       role="group"
       aria-label="Billing period"
-      className="inline-flex p-1 rounded-full bg-slate-100 border border-slate-200"
+      className="inline-flex p-0.5 rounded-full bg-slate-100 border border-slate-200"
     >
       <button
         type="button"
         onClick={() => onToggle(false)}
-        className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${
+        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${
           !isYearly
             ? "bg-white text-slate-900 shadow-sm"
             : "text-slate-500 hover:text-slate-700"
@@ -133,7 +133,7 @@ const BillingToggle = ({ isYearly, onToggle, t }) => (
       <button
         type="button"
         onClick={() => onToggle(true)}
-        className={`px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${
+        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${
           isYearly
             ? "bg-white text-slate-900 shadow-sm"
             : "text-slate-500 hover:text-slate-700"
@@ -148,60 +148,64 @@ const BillingToggle = ({ isYearly, onToggle, t }) => (
 // ─── Plan Card ────────────────────────────────────────────────────────────────
 const PlanCard = ({ plan, loading, onSelect, currentTier, t }) => {
   const isCurrentPlan = currentTier === plan.key;
+  // For free plan, only show included features
+  const visibleFeatures = plan.key === "free"
+    ? plan.features.filter((f) => f.included)
+    : plan.features;
 
   return (
     <div
-      className={`relative flex flex-col p-8 rounded-[32px] border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+      className={`relative flex flex-col p-6 rounded-2xl border bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
         plan.highlight
-          ? "border-blue-600 shadow-2xl shadow-blue-600/10 scale-[1.02] z-10"
+          ? "border-blue-600 shadow-xl shadow-blue-600/10 scale-[1.02] z-10"
           : "border-slate-100 shadow-sm"
       }`}
     >
       {plan.badge && (
-        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap shadow-lg shadow-blue-200">
-          <Sparkles size={10} className="fill-white" /> {plan.badge}
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 whitespace-nowrap shadow-md shadow-blue-200">
+          <Sparkles size={8} className="fill-white" /> {plan.badge}
         </div>
       )}
 
-      <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4">{plan.name}</h3>
+      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">{plan.name}</h3>
 
       <div className="flex items-baseline gap-1 mb-1">
-        <span className="text-4xl font-black text-slate-900 tracking-tighter">{plan.monthlyPrice}</span>
-        {plan.period && <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">{plan.period}</span>}
+        <span className="text-3xl font-black text-slate-900 tracking-tighter">{plan.monthlyPrice}</span>
+        {plan.period && <span className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">{plan.period}</span>}
       </div>
 
       {plan.yearlyPrice && (
-        <p className="text-[11px] font-bold text-blue-600/70 mb-4 uppercase tracking-wide">or {plan.yearlyPrice}/year</p>
+        <p className="text-[10px] font-bold text-blue-600/70 mb-3 uppercase tracking-wide">or {plan.yearlyPrice}/year</p>
       )}
 
-      <p className="text-sm text-slate-500 mb-8 font-medium leading-relaxed">{plan.description}</p>
+      <p className="text-xs text-slate-500 mb-5 font-medium leading-relaxed">{plan.description}</p>
 
       {isCurrentPlan ? (
-        <div className="w-full py-4 rounded-full font-black text-[11px] uppercase tracking-[0.2em] text-center bg-slate-50 text-slate-400 mb-8 border border-slate-100 cursor-default">
+        <div className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] text-center bg-slate-50 text-slate-400 mb-5 border border-slate-100 cursor-default">
           {t("pricing.currentPlan")}
         </div>
       ) : (
         <button
           onClick={() => onSelect(plan)}
           disabled={loading}
-          className={`w-full py-4 rounded-full font-black text-[11px] uppercase tracking-[0.2em] transition-all mb-8 disabled:opacity-60 active:scale-95 ${
+          className={`w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all mb-5 disabled:opacity-60 active:scale-95 ${
             plan.highlight
-              ? "bg-slate-900 text-white hover:bg-blue-600 shadow-lg shadow-slate-200"
+              ? "bg-slate-900 text-white hover:bg-blue-600 shadow-md shadow-slate-200"
               : "bg-white border border-slate-200 text-slate-900 hover:bg-slate-50"
           }`}
         >
-          {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : plan.cta}
+          {loading ? <Loader2 size={13} className="animate-spin mx-auto" /> : plan.cta}
         </button>
       )}
 
-      <ul className="space-y-4 flex-1">
-        {plan.features.map((f, i) => (
-          <li key={i} className="flex items-start gap-3 text-[13px] font-medium">
-            <div className="mt-0.5 shrink-0 transition-colors">
+      <ul className="space-y-2.5 flex-1">
+        {visibleFeatures.map((f, i) => (
+          <li key={i} className="flex items-start gap-2 text-[11px] font-medium">
+            <div className="mt-0.5 shrink-0">
               {f.included ? (
-                <Check size={14} className="text-blue-600" strokeWidth={3} />
+                <Check size={11} className="text-blue-600" strokeWidth={3} />
               ) : (
-                <X size={14} className="text-slate-200" strokeWidth={3} />
+                <X size={11} className="text-slate-200" strokeWidth={3} />
               )}
             </div>
             <span className={f.included ? "text-slate-600" : "text-slate-300 line-through"}>
@@ -230,44 +234,44 @@ const ProPlanCard = ({ plan, loading, onSelect, currentTier, t }) => {
   };
 
   return (
-    <div className="relative flex flex-col p-8 rounded-[32px] border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-blue-600 shadow-2xl shadow-blue-600/10 scale-[1.02] z-10">
-      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap shadow-lg shadow-blue-200">
-        <Sparkles size={10} className="fill-white" /> {variant.badge}
+    <div className="relative flex flex-col p-6 rounded-2xl border bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 border-blue-600 shadow-xl shadow-blue-600/10 scale-[1.02] z-10">
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 whitespace-nowrap shadow-md shadow-blue-200">
+        <Sparkles size={8} className="fill-white" /> {variant.badge}
       </div>
 
-      <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{plan.name}</h3>
+      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{plan.name}</h3>
 
       <BillingToggle isYearly={isYearly} onToggle={setIsYearly} t={t} />
 
       <div className="flex items-baseline gap-1 mb-1">
         <span className="text-3xl font-black text-slate-900 tracking-tighter">{variant.price}</span>
-        <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">{variant.period}</span>
+        <span className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">{variant.period}</span>
       </div>
 
-      <p className="text-sm text-slate-500 mb-8 font-medium leading-relaxed">{variant.description}</p>
+      <p className="text-xs text-slate-500 mb-5 font-medium leading-relaxed">{variant.description}</p>
 
       {isCurrentPlan ? (
-        <div className="w-full py-4 rounded-full font-black text-[11px] uppercase tracking-[0.2em] text-center bg-slate-50 text-slate-400 mb-8 border border-slate-100 cursor-default">
+        <div className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] text-center bg-slate-50 text-slate-400 mb-5 border border-slate-100 cursor-default">
           {t("pricing.currentPlan")}
         </div>
       ) : (
         <button
           onClick={handleSelect}
           disabled={loading}
-          className="w-full py-4 rounded-full font-black text-[11px] uppercase tracking-[0.2em] transition-all mb-8 disabled:opacity-60 active:scale-95 bg-slate-900 text-white hover:bg-blue-600 shadow-lg shadow-slate-200"
+          className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all mb-5 disabled:opacity-60 active:scale-95 bg-slate-900 text-white hover:bg-blue-600 shadow-md shadow-slate-200"
         >
-          {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : variant.cta}
+          {loading ? <Loader2 size={13} className="animate-spin mx-auto" /> : variant.cta}
         </button>
       )}
 
-      <ul className="space-y-4 flex-1">
+      <ul className="space-y-2.5 flex-1">
         {plan.features.map((f, i) => (
-          <li key={i} className="flex items-start gap-3 text-[13px] font-medium">
-            <div className="mt-0.5 shrink-0 transition-colors">
+          <li key={i} className="flex items-start gap-2 text-[11px] font-medium">
+            <div className="mt-0.5 shrink-0">
               {f.included ? (
-                <Check size={14} className="text-blue-600" strokeWidth={3} />
+                <Check size={11} className="text-blue-600" strokeWidth={3} />
               ) : (
-                <X size={14} className="text-slate-200" strokeWidth={3} />
+                <X size={11} className="text-slate-200" strokeWidth={3} />
               )}
             </div>
             <span className={f.included ? "text-slate-600" : "text-slate-300 line-through"}>{f.text}</span>
@@ -289,7 +293,6 @@ const Pricing = () => {
   const currentTier = user?.subscription_tier || "free";
   const isTrialActive = user?.is_trial_active;
 
-  // Build plans using current language translations
   const PLANS = buildPlans(t);
 
   const handleSelect = async (plan) => {
@@ -320,17 +323,17 @@ const Pricing = () => {
     <div className="min-h-screen bg-white">
       <NavBar />
 
-      <section className="pt-40 pb-24 px-6 relative overflow-hidden">
+      <section className="pt-32 pb-16 px-6 relative overflow-hidden">
         {/* Decorative background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-blue-50/40 to-transparent -z-10" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[400px] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-blue-50/40 to-transparent -z-10" />
 
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight leading-snug">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2 tracking-tight leading-snug">
               {t("pricing.heroTitle")}{" "}
               <span className="text-blue-600 italic">{t("pricing.heroTitleHighlight")}</span>
             </h1>
-            <p className="text-slate-500 text-lg font-medium max-w-xl mx-auto">
+            <p className="text-slate-500 text-sm font-medium max-w-md mx-auto">
               {t("pricing.heroSubtitle")} <br />
               {t("pricing.heroSubtitleLine2")}
             </p>
@@ -344,7 +347,7 @@ const Pricing = () => {
             />
           )}
 
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
             {PLANS.map((plan) =>
               plan.key === "pro" ? (
                 <ProPlanCard
@@ -368,26 +371,26 @@ const Pricing = () => {
             )}
           </div>
 
-          <div className="mt-20 text-center p-12 border border-slate-100 rounded-[32px] bg-slate-50/50 max-w-3xl mx-auto">
-            <h3 className="text-xl font-black text-slate-900 mb-3 tracking-tight">
+          <div className="mt-12 text-center p-8 border border-slate-100 rounded-2xl bg-slate-50/50 max-w-2xl mx-auto">
+            <h3 className="text-base font-black text-slate-900 mb-2 tracking-tight">
               {t("pricing.enterpriseTitle")}
             </h3>
-            <p className="text-slate-500 font-medium text-sm mb-8 leading-relaxed">
+            <p className="text-slate-500 font-medium text-xs mb-6 leading-relaxed">
               {t("pricing.enterpriseDesc")} <br />
               {t("pricing.enterpriseDescLine2")}
             </p>
             <a
               href="mailto:hello@nebulacv.ge"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-lg shadow-slate-200"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-md shadow-slate-200"
             >
               {t("pricing.enterpriseCta")}
             </a>
           </div>
 
-          <div className="mt-16 text-center">
-            <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-full border border-slate-100 shadow-sm">
-              <Zap size={14} className="text-blue-600 fill-blue-600" />
-              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+          <div className="mt-10 text-center">
+            <div className="inline-flex items-center gap-2 px-5 py-2 bg-white rounded-full border border-slate-100 shadow-sm">
+              <Zap size={12} className="text-blue-600 fill-blue-600" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 {t("pricing.trialBadge")}
               </span>
             </div>

@@ -9,7 +9,7 @@ class CVListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CV
-        fields = ["id", "title", "language", "template", "is_archived", "labels", "updated_at", "created_at"]
+        fields = ["id", "title", "language", "template", "is_archived", "labels", "updated_at", "created_at", "cv_data"]
 
 
 

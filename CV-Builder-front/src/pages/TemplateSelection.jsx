@@ -217,7 +217,32 @@ const TemplateSelection = () => {
 
         @media (max-width: 640px) {
           .cards-grid { grid-template-columns: 1fr !important; }
-        }
+
+          /* Stack card: preview on top, content below */
+          .ts-card { flex-direction: column !important; }
+
+          .ts-preview-panel {
+            width: 100% !important;
+            border-right: none !important;
+            border-bottom: 1px solid #f0f2f5 !important;
+          }
+
+          .ts-preview-wrap {
+            width: 100% !important;
+            aspect-ratio: unset !important;
+            height: 320px !important;
+            overflow: hidden !important;
+          }
+
+          .ts-preview-wrap > div {
+            height: 100% !important;
+          }
+
+          .ts-preview-wrap img {
+            object-fit: cover !important;
+            height: 100% !important;
+            width: 100% !important;
+          }
       `}</style>
 
       {/* Marketing NavBar (same as Home/Pricing) */}

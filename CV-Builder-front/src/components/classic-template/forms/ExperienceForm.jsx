@@ -119,8 +119,8 @@ const ExperienceForm = ({ section, setResumeData, cvId, dragHandleProps, onDelet
 
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: t("form.company"), key: "company", placeholder: "e.g. Google" },
-                { label: t("form.jobTitle"), key: "position", placeholder: "e.g. Software Engineer", value: item.position || item.title || "" },
+                { label: t("form.company"), key: "company", placeholder: t("placeholder.company") },
+                { label: t("form.jobTitle"), key: "position", placeholder: t("placeholder.jobTitle"), value: item.position || item.title || "" },
               ].map((f) => (
                 <div key={f.key} className="space-y-1.5">
                   <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider ml-1">{f.label}</label>
@@ -165,7 +165,7 @@ const ExperienceForm = ({ section, setResumeData, cvId, dragHandleProps, onDelet
 
             <div className="relative">
               <textarea
-                placeholder="Describe your achievements..."
+                placeholder={t("placeholder.experienceDescription")}
                 className="w-full p-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-gray-400 transition-all text-sm text-gray-800 placeholder:text-gray-300 resize-none h-28 pb-10 leading-relaxed"
                 value={item.description || ""}
                 onChange={(e) => updateItem(item.id, "description", e.target.value)}

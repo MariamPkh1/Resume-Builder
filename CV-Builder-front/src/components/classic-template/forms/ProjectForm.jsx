@@ -65,7 +65,7 @@ const ProjectForm = ({ section, setResumeData, dragHandleProps, onDeleteSection 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider ml-1">{t("form.projectName")}</label>
                 <input
-                  placeholder="e.g. Portfolio Website"
+                  placeholder={t("placeholder.projectName")}
                   className="w-full p-2.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-all text-sm text-gray-800 placeholder:text-gray-300"
                   value={item.name || ""}
                   onChange={(e) => updateItem(item.id, "name", e.target.value)}
@@ -88,7 +88,7 @@ const ProjectForm = ({ section, setResumeData, dragHandleProps, onDeleteSection 
             <div className="space-y-1.5">
               <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider ml-1">{t("form.description")}</label>
               <textarea
-                placeholder="Describe what you built and the technologies used..."
+                placeholder={t("placeholder.projectDescription")}
                 rows="2"
                 className="w-full p-2.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-all text-sm text-gray-800 placeholder:text-gray-300 resize-none leading-relaxed"
                 value={item.description || ""}

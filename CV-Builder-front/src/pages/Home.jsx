@@ -49,72 +49,6 @@ function useCounter(end, duration = 1800, start = false) {
   return count;
 }
 
-// ── Resume card mock ───────────────────────────────────────────────────────────
-function ResumeMock() {
-  return (
-    <div
-      style={{
-        background: "white",
-        borderRadius: "16px",
-        padding: "28px 24px",
-        boxShadow: "0 8px 40px rgba(0,0,0,0.10)",
-        minWidth: 260,
-        maxWidth: 320,
-        fontFamily: "Georgia, serif",
-        position: "relative",
-      }}
-    >
-      {/* Header block */}
-      <div style={{ borderBottom: "2px solid #1a1a1a", paddingBottom: 10, marginBottom: 12 }}>
-        <div style={{ height: 10, width: "60%", background: "#1a1a1a", borderRadius: 3, marginBottom: 6 }} />
-        <div style={{ height: 7, width: "40%", background: "#9ca3af", borderRadius: 3 }} />
-      </div>
-      {/* Section label */}
-      <div style={{ height: 7, width: "30%", background: "#d1d5db", borderRadius: 3, marginBottom: 8 }} />
-      {/* Lines */}
-      {[90, 75, 85, 60, 80].map((w, i) => (
-        <div
-          key={i}
-          style={{
-            height: 6,
-            width: `${w}%`,
-            background: i === 0 ? "#374151" : "#e5e7eb",
-            borderRadius: 3,
-            marginBottom: 6,
-          }}
-        />
-      ))}
-      <div style={{ height: 1, background: "#f3f4f6", margin: "12px 0" }} />
-      <div style={{ height: 7, width: "25%", background: "#d1d5db", borderRadius: 3, marginBottom: 8 }} />
-      {[70, 55, 80].map((w, i) => (
-        <div
-          key={i}
-          style={{
-            height: 6,
-            width: `${w}%`,
-            background: "#e5e7eb",
-            borderRadius: 3,
-            marginBottom: 6,
-          }}
-        />
-      ))}
-      {/* Decorative corner accent */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          width: 40,
-          height: 40,
-          background: "linear-gradient(135deg, transparent 50%, #3b82f6 50%)",
-          borderRadius: "0 16px 0 0",
-          opacity: 0.15,
-        }}
-      />
-    </div>
-  );
-}
-
 // ── Main ───────────────────────────────────────────────────────────────────────
 const Home = () => {
   const navigate = useNavigate();
@@ -152,6 +86,7 @@ const Home = () => {
         background: "#f8f9fb",
         fontFamily:
           "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        overflowX: "hidden",
       }}
     >
       {/* Inject Google Font */}
@@ -206,15 +141,47 @@ const Home = () => {
         }
         .primary-btn:active { transform: translateY(0); }
         .ghost-btn:hover { background: #f3f4f6 !important; }
+
+        /* ── Responsive: hide resume image + animation on mobile ── */
+        @media (max-width: 768px) {
+          .hero-section {
+            padding: 100px 16px 60px !important;
+          }
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0 !important;
+          }
+          .hero-right {
+            display: none !important;
+          }
+          .hero-left {
+            text-align: center;
+            min-width: 0;
+            width: 100%;
+          }
+          .hero-left p {
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 100% !important;
+          }
+          .hero-cta-buttons {
+            justify-content: center !important;
+          }
+          .hero-badge {
+            margin-left: auto;
+            margin-right: auto;
+          }
+        }
       `}</style>
 
       <NavBar />
 
       {/* ── Hero ── */}
       <section
+        className="hero-section"
         style={{
           position: "relative",
-          padding: "100px 24px 80px",
+          padding: "130px 24px 80px",
           overflow: "hidden",
         }}
       >
@@ -235,6 +202,7 @@ const Home = () => {
         />
 
         <div
+          className="hero-grid"
           style={{
             maxWidth: 1200,
             margin: "0 auto",
@@ -246,11 +214,12 @@ const Home = () => {
         >
           {/* Left */}
           <div
-            className="hero-fadeup"
+            className="hero-fadeup hero-left"
             style={{ animationDelay: "0.05s", animationFillMode: "forwards" }}
           >
             {/* Badge */}
             <div
+              className="hero-badge"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -293,7 +262,7 @@ const Home = () => {
             <h1
               style={{
                 fontSize: language === "ka"
-                    ? "clamp(28px, 4.2vw, 48px)"   
+                    ? "clamp(28px, 4.2vw, 48px)"
                     : "clamp(35px, 5vw, 62px)",
                 fontWeight: 800,
                 lineHeight: 1.06,
@@ -331,7 +300,10 @@ const Home = () => {
             </p>
 
             {/* CTA Buttons */}
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 44, marginTop: 60, }}>
+            <div
+              className="hero-cta-buttons"
+              style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 44, marginTop: 60 }}
+            >
               <button
                 className="primary-btn"
                 onClick={() => navigate(user ? "/app" : "/signup")}
@@ -382,37 +354,11 @@ const Home = () => {
                 {t("landing.browseTemplates") || "View Templates"}
               </button>
             </div>
-
-            {/* Stats */}
-            {/* <div style={{ display: "flex", gap: 32 }}>
-              {[
-                { value: `${resumeCount}+`, label: "Resumes built" },
-                { value: `${atsRate}%`, label: "ATS pass rate" },
-                { value: `${interviewsX}x`, label: "More interviews" },
-              ].map(({ value, label }) => (
-                <div key={label}>
-                  <div
-                    style={{
-                      fontSize: 28,
-                      fontWeight: 900,
-                      background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      lineHeight: 1,
-                      marginBottom: 4,
-                    }}
-                  >
-                    {value}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>{label}</div>
-                </div>
-              ))}
-            </div> */}
           </div>
 
-          {/* Right — floating resume + AI tooltip */}
+          {/* Right — floating resume + AI tooltip (hidden on mobile/tablet) */}
           <div
-            className="hero-fadeup"
+            className="hero-fadeup hero-right"
             style={{
               animationDelay: "0.18s",
               animationFillMode: "forwards",
@@ -421,21 +367,20 @@ const Home = () => {
               justifyContent: "center",
             }}
           >
-            {/* Floating resume mock */}
             {/* Floating resume image */}
-<div style={{ animation: "float 3.5s ease-in-out infinite" }}>
-  <img
-    src={heroResume}
-    alt="Resume preview"
-    style={{
-  width: 520,
-  maxWidth: "100%",
-  borderRadius: 16,
-  boxShadow: "0 8px 40px rgba(0,0,0,0.13)",
-  display: "block",
-}}
-  />
-</div>
+            <div style={{ animation: "float 3.5s ease-in-out infinite" }}>
+              <img
+                src={heroResume}
+                alt="Resume preview"
+                style={{
+                  width: 520,
+                  maxWidth: "100%",
+                  borderRadius: 16,
+                  boxShadow: "0 8px 40px rgba(0,0,0,0.13)",
+                  display: "block",
+                }}
+              />
+            </div>
 
             {/* AI tooltip overlay */}
             <div

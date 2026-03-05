@@ -13,7 +13,9 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext"; 
 import Pricing from "./pages/Pricing";
 import Settings from "./pages/Settings";
+import Contact from "./pages/Contact";
 import UniversalBuilder from "./components/builder/UniversalBuilder";
+
 
 const App = () => {
   return (
@@ -27,6 +29,7 @@ const App = () => {
         <Route path="/password-reset" element={<ResetPassword />} />
         <Route path="/templates" element={<TemplateSelection />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/contact" element={<Contact />} />
 
         {/* Protected Routes */}
         <Route

@@ -62,9 +62,9 @@ const CertificateForm = ({ section, setResumeData, dragHandleProps, onDeleteSect
             </button>
 
             {[
-              { label: t("form.certificateName"), key: "name", placeholder: "e.g. AWS Certified Developer", flex: "flex-1" },
-              { label: t("form.issuer"), key: "issuer", placeholder: "e.g. Amazon", flex: "flex-1" },
-              { label: t("form.date"), key: "date", placeholder: "MM / YYYY", flex: "w-28" },
+              { label: t("form.certificateName"), key: "name", placeholder: t("placeholder.certificateName"), flex: "flex-1" },
+              { label: t("form.issuer"), key: "issuer", placeholder: t("placeholder.issuer"), flex: "flex-1" },
+              { label: t("form.date"), key: "date", placeholder: t("placeholder.date"), flex: "w-28" },
             ].map((f) => (
               <div key={f.key} className={`${f.flex} space-y-1.5`}>
                 <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider ml-1">{f.label}</label>

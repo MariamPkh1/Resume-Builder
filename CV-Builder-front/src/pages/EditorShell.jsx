@@ -27,7 +27,6 @@ const EditorShell = ({
   const { resumeId, template } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  // Default preview zoom matches your preferred 85% UI
   const [zoom, setZoom] = useState(0.85);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [localName, setLocalName] = useState(resumeData?.title || resumeData?.name || "");
@@ -58,8 +57,6 @@ const EditorShell = ({
     setResumeData({ ...resumeData, title: val, name: val });
   };
 
-  // ── Shared button style ──────────────────────────────────────────────────
-  // Ghost style; slightly larger to stay legible at 80% zoom
   const ghostBtn = (active = false) => ({
     display: "inline-flex",
     alignItems: "center",
@@ -81,9 +78,7 @@ const EditorShell = ({
   return (
     <div
       className="flex flex-col h-screen bg-gray-50 text-gray-900 overflow-hidden font-sans"
-      style={{
-        transformOrigin: "top center",
-      }}
+      style={{ transformOrigin: "top center" }}
     >
       <style>{`
         .editor-ghost-btn { transition: all 0.15s ease; }
@@ -102,7 +97,6 @@ const EditorShell = ({
         className="h-8 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-50 flex-none"
         style={{ height: 32 }}
       >
-
         {/* Left */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <button
@@ -132,8 +126,6 @@ const EditorShell = ({
 
         {/* Right: action buttons */}
         <div className="flex items-center gap-1.5 flex-1 justify-end">
-
-          {/* ATS score badge (when score exists) */}
           {atsScore !== null && atsScore !== undefined && (
             <button
               onClick={onATSCheck}
@@ -147,7 +139,6 @@ const EditorShell = ({
             </button>
           )}
 
-          {/* ATS Check (no score yet) */}
           {(atsScore === null || atsScore === undefined) && onATSCheck && (
             <button
               onClick={onATSCheck}
@@ -155,50 +146,37 @@ const EditorShell = ({
               className="editor-ghost-btn hidden lg:inline-flex disabled:opacity-40"
               style={ghostBtn()}
             >
-              {isATSLoading
-                ? <Loader2 size={12} className="animate-spin" />
-                : <BarChart2 size={12} />
-              }
+              {isATSLoading ? <Loader2 size={12} className="animate-spin" /> : <BarChart2 size={12} />}
               {t("editor.ats")}
             </button>
           )}
 
-          {/* Job Tailor */}
           {onJobTailor && (
             <button onClick={onJobTailor} className="editor-ghost-btn hidden lg:inline-flex" style={ghostBtn()}>
-              <Crosshair size={12} />
-              {t("editor.tailor")}
+              <Crosshair size={12} /> {t("editor.tailor")}
             </button>
           )}
 
-          {/* AI Improve */}
           {onAIImprove && (
             <button onClick={onAIImprove} className="editor-ghost-btn hidden lg:inline-flex" style={ghostBtn()}>
-              <Sparkles size={12} />
-              {t("editor.improve")}
+              <Sparkles size={12} /> {t("editor.improve")}
             </button>
           )}
 
-          {/* Analyze */}
           {onAnalyzeCV && (
             <button onClick={onAnalyzeCV} className="editor-ghost-btn hidden lg:inline-flex" style={ghostBtn()}>
-              <ScanText size={12} />
-              {t("editor.analyze")}
+              <ScanText size={12} /> {t("editor.analyze")}
             </button>
           )}
 
-          {/* Version History */}
           {onVersionHistory && (
             <button onClick={onVersionHistory} className="editor-ghost-btn hidden lg:inline-flex" style={ghostBtn()}>
-              <History size={12} />
-              {t("editor.history")}
+              <History size={12} /> {t("editor.history")}
             </button>
           )}
 
-          {/* Divider */}
           <div className="h-4 w-px bg-gray-200 mx-1 hidden lg:block" />
 
-          {/* Save icon */}
           <button
             onClick={handleSave}
             disabled={isSaving}
@@ -208,7 +186,6 @@ const EditorShell = ({
             {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
           </button>
 
-          {/* Export PDF — only solid button, kept dark */}
           <button
             onClick={handleDownloadPDF}
             disabled={isExporting}
@@ -243,7 +220,6 @@ const EditorShell = ({
 
           <div className="mx-2 h-4 w-px bg-gray-200" />
 
-          {/* Template switcher pills — "modern" = Europass (backend uses "modern") */}
           <div className="flex items-center bg-gray-100 border border-gray-200 p-0.5 rounded-lg gap-0.5">
             {[
               { value: "classic", label: "Classic" },
@@ -264,8 +240,19 @@ const EditorShell = ({
           </div>
         </div>
 
-        {/* Mobile edit/preview toggle */}
-        <div className="md:hidden px-3 pb-2 pt-1">
+        {/* Mobile row: back button on left, edit/preview toggle on right */}
+        <div className="md:hidden px-3 pb-2 pt-1 flex items-center justify-between">
+
+          {/* ← Back to dashboard — only on mobile */}
+          <button
+            onClick={() => navigate("/app")}
+            className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+          >
+            <ChevronLeft size={14} />
+            Dashboard
+          </button>
+
+          {/* Edit / Preview toggle */}
           <div className="inline-flex items-center bg-gray-100 border border-gray-200 p-0.5 rounded-full gap-0.5">
             <button
               type="button"
@@ -297,7 +284,7 @@ const EditorShell = ({
       <div className="flex flex-1 overflow-hidden">
         <main className={`${showMobilePreview ? "hidden md:flex" : "flex"} w-full md:w-[45%] flex-col border-r border-gray-200 bg-white z-10`}>
           <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8">
-            <div className="  max-w-md mx-auto space-y-6 pb-24">
+            <div className="max-w-md mx-auto space-y-6 pb-24">
               {children}
             </div>
           </div>

@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("user");
     localStorage.removeItem("display_name");
-    window.location.href = "/login";
+    // window.location.href = "/login";
   }, []);
 
   // 2. Profile Refresh (Syncs Tier/Quotas)
