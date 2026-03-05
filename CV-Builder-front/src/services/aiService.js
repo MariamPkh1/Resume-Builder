@@ -14,6 +14,12 @@
  * Every function returns { data, error } — components never need try/catch.
  * Error object is normalized: { detail, quota, upgrade_required }.
  * 403 quota errors: upgrade_required === true; use detail + quota for UI messaging.
+ *
+ * Language support:
+ *   All functions accept a top-level `language` param ("en" | "ka").
+ *   This is forwarded as the `language` field in every POST body so the backend
+ *   LLM prompt instructs the model to respond in the correct language.
+ *   Omitting `language` (or passing undefined / "") defaults to "en" on the backend.
  */
 
 import api from "./api";
@@ -21,15 +27,20 @@ import api from "./api";
 const normalizeError = (err) => {
   const body = err.response?.data ?? {};
   const status = err.response?.status;
-  const detail = typeof body?.detail === "string" ? body.detail : (body?.error ?? body?.detail ?? "Something went wrong. Please try again.");
+  const detail =
+    typeof body?.detail === "string"
+      ? body.detail
+      : (body?.error ?? body?.detail ?? "Something went wrong. Please try again.");
   const quota = body?.quota ?? null;
   const upgrade_required = status === 403 || !!body?.upgrade_required;
   return { detail, quota, upgrade_required, error: detail, ...body };
 };
 
 // ─── 1. Improve a single section ─────────────────────────────────────────────
-// Guide body: { cv_id, section_name, section_content, job_description, language }
-// Accepts sectionType/content/context for backward compat; maps to Guide fields.
+// Serializer: { cv_id, section_name, section_content, job_description, language }
+//
+// `language` is accepted BOTH as a top-level param AND (for backward compat)
+// inside the `context` object. Top-level takes priority.
 export const improveSectionAPI = async ({
   cvId,
   sectionType,
@@ -37,17 +48,17 @@ export const improveSectionAPI = async ({
   content,
   sectionContent,
   jobDescription,
+  language,          // ← top-level, preferred
   context = {},
 }) => {
   try {
     const body = {
-      cv_id: cvId,
-      section_name: sectionName ?? sectionType,
+      cv_id:           cvId,
+      section_name:    sectionName ?? sectionType,
       section_content: sectionContent ?? content ?? "",
-      job_description:
-        jobDescription ?? context?.job_description ?? context?.job_title ?? "",
-      // Hint to backend which language the user is currently using in the UI
-      language: context.language,
+      job_description: jobDescription ?? context?.job_description ?? context?.job_title ?? "",
+      // Top-level `language` wins; fall back to context.language; default "en"
+      language:        language ?? context?.language ?? "en",
     };
     const { data } = await api.post("/api/ai/improve-section/", body);
     return { data, error: null };
@@ -57,19 +68,27 @@ export const improveSectionAPI = async ({
 };
 
 // ─── 2. ATS compatibility check ──────────────────────────────────────────────
-// Guide body: { cv_id, job_description, language }
+// Serializer: { cv_id, job_description, language }
 // Accepts jobDescription OR (targetRole, industry); builds job_description.
 export const checkATSAPI = async ({
   cvId,
   jobDescription,
-  industry = "",
-  targetRole = "",
-  language,
+  industry    = "",
+  targetRole  = "",
+  language    = "en",
 }) => {
   try {
-    const jd = jobDescription ?? [targetRole && `Target role: ${targetRole}`, industry && `Industry: ${industry}`].filter(Boolean).join("\n");
+    const jd =
+      jobDescription ??
+      [
+        targetRole && `Target role: ${targetRole}`,
+        industry   && `Industry: ${industry}`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
     const { data } = await api.post("/api/ai/check-ats/", {
-      cv_id: cvId,
+      cv_id:           cvId,
       job_description: jd || "General CV review",
       language,
     });
@@ -80,23 +99,29 @@ export const checkATSAPI = async ({
 };
 
 // ─── 3. Tailor CV for a specific job ─────────────────────────────────────────
-// Guide body: { cv_id, job_description, focus_sections, language }
+// Serializer: { cv_id, job_description, focus_sections, language }
 // Combines jobTitle, company into job_description; defaults focus_sections.
 export const tailorForJobAPI = async ({
   cvId,
-  jobTitle = "",
+  jobTitle       = "",
   jobDescription,
-  company = "",
+  company        = "",
   focusSections,
-  language,
+  language       = "en",
 }) => {
   try {
-    const parts = [jobTitle && `Role: ${jobTitle}`, company && `Company: ${company}`, jobDescription].filter(Boolean);
+    const parts = [
+      jobTitle       && `Role: ${jobTitle}`,
+      company        && `Company: ${company}`,
+      jobDescription,
+    ].filter(Boolean);
+
     const jd = parts.join("\n\n");
+
     const { data } = await api.post("/api/ai/tailor-for-job/", {
-      cv_id: cvId,
+      cv_id:           cvId,
       job_description: jd || "General tailoring",
-      focus_sections: focusSections ?? ["summary", "experience", "skills"],
+      focus_sections:  focusSections ?? ["summary", "experience", "skills"],
       language,
     });
     return { data, error: null };
@@ -105,20 +130,28 @@ export const tailorForJobAPI = async ({
   }
 };
 
-// ─── 4. Full CV analysis ──────────────────────────────────────────────────────
-// Guide body: { cv_id, job_description, language }
+// ─── 4. Full CV analysis ─────────────────────────────────────────────────────
+// Serializer: { cv_id, job_description, language }
 // Accepts jobDescription OR (targetRole, industry); builds job_description.
 export const analyzeCVAPI = async ({
   cvId,
   jobDescription,
   targetRole = "",
-  industry = "",
-  language,
+  industry   = "",
+  language   = "en",
 }) => {
   try {
-    const jd = jobDescription ?? [targetRole && `Target role: ${targetRole}`, industry && `Industry: ${industry}`].filter(Boolean).join("\n");
+    const jd =
+      jobDescription ??
+      [
+        targetRole && `Target role: ${targetRole}`,
+        industry   && `Industry: ${industry}`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
     const { data } = await api.post("/api/ai/analyze-cv/", {
-      cv_id: cvId,
+      cv_id:           cvId,
       job_description: jd || "General CV analysis",
       language,
     });
