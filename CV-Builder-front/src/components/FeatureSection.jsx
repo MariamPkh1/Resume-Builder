@@ -19,13 +19,13 @@ const FeaturesSection = () => {
       <div className="max-w-6xl mx-auto">
         {/* Minimal Header */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
-            Everything you need
-          </h2>
-          <p className="text-slate-500 text-lg font-medium">
-            Powerful tools to build, optimize, and share your perfect resume.
-          </p>
-        </div>
+  <h2 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
+    {t("landing.featuresTitle")}
+  </h2>
+  <p className="text-slate-500 text-lg font-medium">
+    {t("landing.featuresSubtitle")}
+  </p>
+</div>
 
         {/* The Grid matching your reference */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
