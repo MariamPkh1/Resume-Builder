@@ -30,6 +30,15 @@ class VerifyEmailSerializer(serializers.Serializer):
     def validate_email(self, value):
         return value.lower()
 
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=6)
+
+    def validate_email(self, value):
+        return value.lower()
+
+
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
 

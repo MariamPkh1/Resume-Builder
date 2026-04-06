@@ -2,11 +2,14 @@ import logging
 
 from django.conf import settings
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.cvs.models import CV
+from apps.cvs.serializers import CVDetailSerializer
+from apps.users.limits import limits_for_user
 from .models import AIUsage
 from .quotas import get_ai_quota_status
 from .serializers import (
@@ -520,6 +523,12 @@ class TranslateCVAPIView(APIView):
         except CV.DoesNotExist:
             return Response({"detail": "CV not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        limits = limits_for_user(request.user)
+        if limits.max_cvs != -1:
+            current = CV.objects.filter(user=request.user, is_archived=False).count()
+            if current >= limits.max_cvs:
+                raise PermissionDenied("CV limit reached. Upgrade to create translated copies.")
+
         feature = AIUsage.Feature.TRANSLATE_CV
         quota = get_ai_quota_status(request.user, feature)
 
@@ -563,13 +572,27 @@ class TranslateCVAPIView(APIView):
                 response_payload=result,
             )
 
+            translated_cv = CV.objects.create(
+                user=request.user,
+                title=f"{cv.title} ({data['target_language'].upper()})",
+                cv_data=result.get("translated_cv_data", cv.cv_data),
+                section_order=cv.section_order,
+                language=data["target_language"],
+                template=cv.template,
+                is_archived=False,
+            )
+            translated_cv.labels.set(cv.labels.all())
+
             quota_after = get_ai_quota_status(request.user, feature)
 
             return Response(
                 {
+                    "success": True,
+                    "message": "CV translated successfully",
                     "feature": feature,
                     "cv_id": str(cv.id),
                     "result": result,
+                    "translated_cv": CVDetailSerializer(translated_cv, context={"request": request}).data,
                     "quota": {
                         "used_before": quota["used"],
                         "used_after": quota_after["used"],
@@ -588,7 +611,7 @@ class TranslateCVAPIView(APIView):
                     },
                     "stub": False,
                 },
-                status=status.HTTP_200_OK,
+                status=status.HTTP_201_CREATED,
             )
 
         except Exception as e:

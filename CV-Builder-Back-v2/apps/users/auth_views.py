@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -16,7 +17,6 @@ from .services import (
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 from django.conf import settings
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
@@ -25,6 +25,7 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import (
     RegisterSerializer,
     VerifyEmailSerializer,
+    LoginSerializer,
     ForgotPasswordSerializer,
     ResetPasswordSerializer,
     GoogleAuthSerializer,
@@ -46,6 +47,20 @@ def get_tokens_for_user(user):
         "refresh": str(refresh),
         "access": str(refresh.access_token),
     }
+
+
+def build_auth_response(user, message=None, extra_user_data=None):
+    user_data = MeSerializer(user).data
+    if extra_user_data:
+        user_data.update(extra_user_data)
+
+    payload = {
+        "user": user_data,
+        "tokens": get_tokens_for_user(user),
+    }
+    if message:
+        payload["message"] = message
+    return payload
 
 class MeAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -75,7 +90,7 @@ class RegisterAPIView(APIView):
                     email=data["email"],
                     password=data["password"],
                     full_name=data.get("full_name", ""),
-                    is_active=False,
+                    is_active=True,
                     email_verified=False,
                     subscription_tier="free",  # base tier remains free
                     trial_ends_at=trial_ends_at,  # effective tier becomes pro during trial
@@ -103,23 +118,38 @@ class RegisterAPIView(APIView):
         except Exception as e:
             return Response(
                 {
-                    "detail": "Registration failed while sending verification email.",
+                    "detail": "Registration failed.",
                     "error": str(e),
                 },
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
         return Response(
-            {
-                "detail": "Registration successful. Verification code sent to email.",
-                "email": user.email,
-                "email_verified": user.email_verified,
-                "subscription_tier": user.subscription_tier,
-                "effective_tier": user.effective_tier() if hasattr(user, "effective_tier") else user.subscription_tier,
-                "trial_ends_at": user.trial_ends_at,
-            },
+            build_auth_response(
+                user,
+                message="Registration successful. 7-day Pro trial activated!",
+            ),
             status=status.HTTP_201_CREATED,
         )
+
+
+class LoginAPIView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        user = authenticate(request=request, username=data["email"], password=data["password"])
+        if user is None:
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if not user.is_active:
+            return Response({"error": "Account is inactive"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response(build_auth_response(user), status=status.HTTP_200_OK)
 
 class VerifyEmailAPIView(APIView):
     authentication_classes = []  # public
@@ -164,11 +194,10 @@ class VerifyEmailAPIView(APIView):
         user.save(update_fields=["email_verified", "is_active"])
 
         return Response(
-            {
-                "detail": "Email verified successfully.",
-                "email": user.email,
-                "email_verified": user.email_verified,
-            },
+            build_auth_response(
+                user,
+                message="Email verified successfully.",
+            ),
             status=status.HTTP_200_OK,
         )
 
@@ -327,19 +356,12 @@ class GoogleAuthAPIView(APIView):
         if updates:
             user.save(update_fields=updates)
 
-        tokens = get_tokens_for_user(user)
-
         return Response(
-            {
-                "detail": "Google authentication successful.",
-                "user": {
-                    "email": user.email,
-                    "full_name": user.full_name,
-                    "email_verified": user.email_verified,
-                    "created": created,
-                },
-                **tokens,
-            },
+            build_auth_response(
+                user,
+                message="Google authentication successful.",
+                extra_user_data={"created": created},
+            ),
             status=status.HTTP_200_OK,
         )
 

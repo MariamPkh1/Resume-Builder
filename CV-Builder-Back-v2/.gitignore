@@ -16,6 +16,7 @@ staticfiles/
 # IDE
 .idea/
 .vscode/
+.tmp_pdfdeps/
 
 # OS
 .DS_Store

@@ -1,0 +1,14 @@
+services:
+  backend:
+    build:
+      context: .
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: dev-secret
+      DEBUG: "1"
+      OPENAI_API_KEY: test-key
+      PAYMENT_STUB_MODE: "1"
+    volumes:
+      - .:/app

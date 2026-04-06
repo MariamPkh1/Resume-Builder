@@ -3,16 +3,20 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from requests import HTTPError, RequestException
 
 from .models import PaymentSession, SubscriptionHistory
 from .serializers import CreateCheckoutSerializer, CancelSubscriptionSerializer
 
 from .security import verify_bog_webhook_signature, verify_fastoo_webhook_signature
 from .services import (
+    create_bog_checkout_session,
+    create_fastoo_checkout_session,
     create_stub_checkout_session,
-    activate_subscription_from_payment,
     get_subscription_status_payload,
-    mark_payment_success_if_pending,
+    process_payment_return,
+    process_gateway_webhook,
+    is_stub_mode,
 )
 
 class SubscriptionStatusAPIView(APIView):
@@ -30,11 +34,28 @@ class CreateCheckoutAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        row = create_stub_checkout_session(
-            user=request.user,
-            plan=data["plan"],
-            gateway=data["gateway"],
-        )
+        try:
+            if is_stub_mode():
+                row = create_stub_checkout_session(
+                    user=request.user,
+                    plan=data["plan"],
+                    gateway=data["gateway"],
+                )
+            elif data["gateway"] == PaymentSession.Gateway.BOG:
+                row = create_bog_checkout_session(
+                    user=request.user,
+                    plan=data["plan"],
+                )
+            elif data["gateway"] == PaymentSession.Gateway.FASTOO:
+                row = create_fastoo_checkout_session(
+                    user=request.user,
+                    plan=data["plan"],
+                )
+        except (RuntimeError, RequestException) as exc:
+            return Response(
+                {"detail": "Failed to create checkout session.", "error": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         return Response(
             {
@@ -44,7 +65,7 @@ class CreateCheckoutAPIView(APIView):
                 "gateway": row.gateway,
                 "plan": row.plan,
                 "amount_gel": str(row.amount_gel),
-                "stub": True,
+                "stub": row.response_payload.get("stub", False),
             },
             status=status.HTTP_201_CREATED,
         )
@@ -63,17 +84,24 @@ class PaymentSuccessAPIView(APIView):
         if not row:
             return Response({"detail": "Payment session not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        changed = mark_payment_success_if_pending(row, source="return_url")
+        try:
+            result = process_payment_return(row)
+        except (RuntimeError, RequestException, HTTPError) as exc:
+            return Response(
+                {"detail": "Failed to verify payment.", "error": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        row.refresh_from_db()
 
         return Response(
             {
-                "detail": "Payment success processed." if changed else "Payment was already processed.",
+                "detail": result["detail"],
                 "order_id": row.order_id,
                 "status": row.status,
                 "plan": row.plan,
                 "gateway": row.gateway,
-                "already_processed": (not changed),
-                "stub": True,
+                "already_processed": (not result["changed"]),
+                "stub": row.response_payload.get("stub", False),
             },
             status=status.HTTP_200_OK,
         )
@@ -102,7 +130,7 @@ class PaymentCancelAPIView(APIView):
                 from_tier=row.user.subscription_tier,
                 to_tier=row.user.subscription_tier,
                 payment_session=row,
-                metadata={"order_id": row.order_id, "stub": True},
+                metadata={"order_id": row.order_id, "stub": row.response_payload.get("stub", False)},
             )
 
         return Response(
@@ -110,7 +138,7 @@ class PaymentCancelAPIView(APIView):
                 "detail": "Payment canceled.",
                 "order_id": row.order_id,
                 "status": row.status,
-                "stub": True,
+                "stub": row.response_payload.get("stub", False),
             },
             status=status.HTTP_200_OK,
         )
@@ -138,14 +166,15 @@ class BOGWebhookAPIView(APIView):
         row.webhook_payload = payload
         row.save(update_fields=["webhook_payload", "updated_at"])
 
-        changed = mark_payment_success_if_pending(row, source="bog_webhook")
+        changed = process_gateway_webhook(row, payload=payload, source="bog_webhook")
+        row.refresh_from_db()
 
         return Response(
             {
                 "detail": "BOG webhook processed.",
                 "order_id": row.order_id,
                 "already_processed": (not changed),
-                "stub": True,
+                "stub": row.response_payload.get("stub", False),
             },
             status=status.HTTP_200_OK,
         )
@@ -173,14 +202,15 @@ class FastooWebhookAPIView(APIView):
         row.webhook_payload = payload
         row.save(update_fields=["webhook_payload", "updated_at"])
 
-        changed = mark_payment_success_if_pending(row, source="fastoo_webhook")
+        changed = process_gateway_webhook(row, payload=payload, source="fastoo_webhook")
+        row.refresh_from_db()
 
         return Response(
             {
                 "detail": "Fastoo webhook processed.",
                 "order_id": row.order_id,
                 "already_processed": (not changed),
-                "stub": True,
+                "stub": row.response_payload.get("stub", False),
             },
             status=status.HTTP_200_OK,
         )

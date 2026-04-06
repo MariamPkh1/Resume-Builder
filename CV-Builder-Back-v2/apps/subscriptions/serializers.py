@@ -2,7 +2,14 @@ from rest_framework import serializers
 
 
 class CreateCheckoutSerializer(serializers.Serializer):
-    plan = serializers.ChoiceField(choices=["pro_monthly", "pro_yearly"])
+    plan = serializers.ChoiceField(
+        choices=[
+            "pro_monthly",
+            "pro_yearly",
+            "professional_monthly",
+            "professional_yearly",
+        ]
+    )
     gateway = serializers.ChoiceField(choices=["bog", "fastoo"])
 
 

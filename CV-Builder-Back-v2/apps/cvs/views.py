@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.http import HttpResponse
-from django.template.loader import render_to_string
 from django.utils import timezone
 
 from rest_framework import permissions, status, viewsets
@@ -16,6 +15,7 @@ from apps.cv_versions.models import CVVersion
 from apps.cv_versions.serializers import CVVersionDetailSerializer, CVVersionSerializer
 from apps.labels.models import Label
 from apps.users.limits import limits_for_user
+from .pdf import check_pdf_engine, render_cv_pdf
 
 
 class CVViewSet(viewsets.ModelViewSet):
@@ -189,25 +189,10 @@ class CVViewSet(viewsets.ModelViewSet):
         is_free = effective_tier == "free"
 
         try:
-            # Import here so environments without WeasyPrint can still run the server
-            from weasyprint import HTML
-
-            html_string = render_to_string(
-                "cvs/pdf.html",
-                {
-                    "cv": cv,
-                    "watermark": is_free,
-                },
-            )
-
-            # 1) Generate PDF first
-            pdf_bytes = HTML(string=html_string).write_pdf()
-
-            # 2) Increment counter ONLY after success
+            pdf_bytes = render_cv_pdf(cv=cv, watermark=is_free)
             request.user.pdfs_downloaded += 1
             request.user.save(update_fields=["pdfs_downloaded", "updated_at"])
 
-            # 3) Return real PDF response
             filename = f"{cv.title}.pdf".replace(" ", "_")
             response = HttpResponse(pdf_bytes, content_type="application/pdf")
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
@@ -232,7 +217,7 @@ class CVViewSet(viewsets.ModelViewSet):
                 "ad_required": is_free,
                 "watermark": is_free,
                 "pdfs_downloaded": request.user.pdfs_downloaded,  # unchanged on failure
-                "pdf_engine_ready": False,
+                "pdf_engine_ready": check_pdf_engine()[0],
             }
 
             # Only expose raw error during debug
