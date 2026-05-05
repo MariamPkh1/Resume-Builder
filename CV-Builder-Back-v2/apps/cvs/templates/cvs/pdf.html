@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <style>
-    body { font-family: Arial, sans-serif; }
-    .title { font-size: 22px; margin-bottom: 12px; }
-    .section { margin-bottom: 12px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 13px; color: #222; padding: 40px; }
     .watermark {
       position: fixed;
       top: 45%;
@@ -18,6 +17,55 @@
       z-index: 0;
     }
     .content { position: relative; z-index: 1; }
+
+    /* Header */
+    .header { border-bottom: 2px solid #2563eb; padding-bottom: 14px; margin-bottom: 20px; }
+    .header h1 { font-size: 26px; font-weight: 700; color: #1e293b; }
+    .header .job-title { font-size: 14px; color: #2563eb; margin-top: 2px; }
+    .header .contact { font-size: 11px; color: #555; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 12px; }
+
+    /* Sections */
+    .section { margin-bottom: 18px; }
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #2563eb;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+    }
+
+    /* Summary */
+    .summary-text { font-size: 12px; color: #444; line-height: 1.6; }
+
+    /* Experience / Education / Projects */
+    .item { margin-bottom: 12px; }
+    .item-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .item-title { font-weight: 700; font-size: 13px; color: #1e293b; }
+    .item-date { font-size: 11px; color: #888; white-space: nowrap; }
+    .item-subtitle { font-size: 11px; color: #555; margin-top: 1px; }
+    .item-description { font-size: 11px; color: #444; margin-top: 5px; line-height: 1.6; white-space: pre-line; }
+
+    /* Skills */
+    .skills-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .skill-tag {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+    }
+
+    /* Languages */
+    .lang-item { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+    .lang-level { color: #888; font-size: 11px; }
+
+    /* Certificates */
+    .cert-item { font-size: 12px; margin-bottom: 6px; }
+    .cert-issuer { font-size: 11px; color: #888; }
   </style>
 </head>
 <body>
@@ -25,18 +73,135 @@
     <div class="watermark">Made with Nebula</div>
   {% endif %}
 
+  {% with d=cv.cv_data %}
   <div class="content">
-    <div class="title">{{ cv.title }}</div>
 
-    <div class="section">
-      <strong>Summary:</strong>
-      <div>{{ cv.cv_data.summary|default:"" }}</div>
+    <!-- HEADER -->
+    {% with p=d.personal_info %}
+    {% if p %}
+    <div class="header">
+      <h1>{{ p.fullName|default:"" }}</h1>
+      {% if p.jobTitle %}<div class="job-title">{{ p.jobTitle }}</div>{% endif %}
+      <div class="contact">
+        {% if p.email %}<span>{{ p.email }}</span>{% endif %}
+        {% if p.phone %}<span>{{ p.phone }}</span>{% endif %}
+        {% if p.location %}<span>{{ p.location }}</span>{% endif %}
+        {% if p.website %}<span>{{ p.website }}</span>{% endif %}
+        {% if p.linkedin %}<span>{{ p.linkedin }}</span>{% endif %}
+      </div>
     </div>
+    {% endif %}
+    {% endwith %}
 
-    <div class="section">
-      <strong>Raw cv_data:</strong>
-      <pre>{{ cv.cv_data|safe }}</pre>
-    </div>
+    <!-- SECTIONS -->
+    {% for section in d.sections %}
+
+      <!-- SUMMARY -->
+      {% if section.type == "summary" %}
+      <div class="section">
+        <div class="section-title">{{ section.title|default:"Summary" }}</div>
+        <div class="summary-text">{{ section.content|default:""|linebreaksbr }}</div>
+      </div>
+      {% endif %}
+
+      <!-- EXPERIENCE -->
+      {% if section.type == "experience" %}
+      <div class="section">
+        <div class="section-title">{{ section.title|default:"Experience" }}</div>
+        {% for item in section.items %}
+        <div class="item">
+          <div class="item-header">
+            <div class="item-title">{{ item.position|default:item.title|default:"" }}</div>
+            <div class="item-date">
+              {{ item.startDate|default:"" }}{% if item.startDate %} – {% endif %}
+              {% if item.current %}Present{% else %}{{ item.endDate|default:"" }}{% endif %}
+            </div>
+          </div>
+          <div class="item-subtitle">{{ item.company|default:"" }}{% if item.location %} · {{ item.location }}{% endif %}</div>
+          {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- EDUCATION -->
+      {% if section.type == "education" %}
+      <div class="section">
+        <div class="section-title">{{ section.title|default:"Education" }}</div>
+        {% for item in section.items %}
+        <div class="item">
+          <div class="item-header">
+           <div class="item-title">{{ item.school|default:"" }}</div>
+            <div class="item-date">
+              {{ item.startDate|default:"" }}{% if item.startDate %} – {% endif %}{{ item.endDate|default:"" }}
+            </div>
+          </div>
+          <div class="item-subtitle">{{ item.degree|default:"" }}{% if item.field %} in {{ item.field }}{% endif %}</div>
+          {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- SKILLS -->
+      {% if section.type == "skills" %}
+      <div class="section">
+        <div class="section-title">{{ section.title|default:"Skills" }}</div>
+        <div class="skills-list">
+          {% for item in section.items %}
+            {% with name=item.name|default:item %}
+            {% if name %}<span class="skill-tag">{{ name }}</span>{% endif %}
+            {% endwith %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- PROJECTS -->
+      {% if section.type == "projects" %}
+      <div class="section">
+        <div class="section-title">{{ section.title|default:"Projects" }}</div>
+        {% for item in section.items %}
+        <div class="item">
+          <div class="item-header">
+            <div class="item-title">{{ item.name|default:item.title|default:"" }}</div>
+            {% if item.url %}<div class="item-date">{{ item.url }}</div>{% endif %}
+          </div>
+          {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- LANGUAGES -->
+      {% if section.type == "languages" %}
+      <div class="section">
+        <div class="section-title">{{ section.title|default:"Languages" }}</div>
+        {% for item in section.items %}
+        <div class="lang-item">
+          <span>{{ item.name|default:"" }}</span>
+          <span class="lang-level">{{ item.level|default:"" }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- CERTIFICATES -->
+      {% if section.type == "certificates" %}
+      <div class="section">
+        <div class="section-title">{{ section.title|default:"Certificates" }}</div>
+        {% for item in section.items %}
+        <div class="cert-item">
+          <div class="item-title">{{ item.name|default:item.title|default:"" }}</div>
+          <div class="cert-issuer">{{ item.issuer|default:"" }} {% if item.date %}· {{ item.date }}{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    {% endfor %}
+
   </div>
+  {% endwith %}
 </body>
 </html>
