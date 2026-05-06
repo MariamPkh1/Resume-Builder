@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("user");
     localStorage.removeItem("display_name");
-    // window.location.href = "/login";
+     window.location.href = "/login";
   }, []);
 
   // 2. Profile Refresh (Syncs Tier/Quotas)
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
             if (!refreshToken) throw new Error("No refresh token");
 
             // Call the refresh endpoint from Guide Section 1
-            const res = await api.post("/api/auth/token/refresh/", { refresh: refreshToken });
+            const res = await api.post("/api/auth/token/refresh/", { refresh: refreshToken }, {_retry:true});
             const { access } = res.data;
             
             localStorage.setItem("access_token", access);
