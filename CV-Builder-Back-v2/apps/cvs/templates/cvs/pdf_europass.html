@@ -42,6 +42,26 @@
       vertical-align: top;
     }
 
+    /* Photo block */
+    .sidebar-photo-wrap {
+      width: 100%;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .sidebar-photo {
+      display: inline-block;
+      width: 160px;
+      height: 160px;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      background: #1f2937;
+    }
+
+    /* Shape variants */
+    .sidebar-photo--rounded { border-radius: 16px; }
+    .sidebar-photo--circle  { border-radius: 50%; }
+
     .sidebar-section {
       margin-bottom: 24px;
     }
@@ -94,7 +114,7 @@
 
     /* Skills — inline-block pills that wrap naturally (WeasyPrint-safe) */
     .sidebar-skills {
-      font-size: 0; /* removes whitespace gaps between inline-blocks */
+      font-size: 0;
       line-height: 0;
     }
 
@@ -260,11 +280,22 @@
   {% endif %}
 
   {% with d=cv.cv_data %}
+  {# Support both camelCase (personalInfo) and snake_case (personal_info) #}
+  {% with p=d.personalInfo|default:d.personal_info %}
+
   <div class="layout">
 
     <!-- SIDEBAR -->
     <div class="sidebar">
-      {% with p=d.personal_info %}
+
+      {% if photo_data_url %}
+      <div class="sidebar-photo-wrap">
+        <img src="{{ photo_data_url }}"
+             alt="Profile photo"
+             class="sidebar-photo {% if photo_shape == 'rounded-full' %}sidebar-photo--circle{% else %}sidebar-photo--rounded{% endif %}" />
+      </div>
+      {% endif %}
+
       {% if p %}
       <div class="sidebar-section">
         <div class="sidebar-section-title">Personal Information</div>
@@ -300,7 +331,6 @@
         {% endif %}
       </div>
       {% endif %}
-      {% endwith %}
 
       {% for section in d.sections %}
         {% if section.type == "skills" %}
@@ -308,9 +338,7 @@
           <div class="sidebar-section-title">{{ section.title|default:"Skills" }}</div>
           <div class="sidebar-skills">
             {% for item in section.items %}
-              {% with name=item.name|default:item %}
-              {% if name %}<span class="sidebar-skill">{{ name }}</span>{% endif %}
-              {% endwith %}
+              {% if item.name %}<span class="sidebar-skill">{{ item.name }}</span>{% endif %}
             {% endfor %}
           </div>
         </div>
@@ -332,14 +360,12 @@
 
     <!-- MAIN -->
     <div class="main">
-      {% with p=d.personal_info %}
       {% if p %}
       <div class="name-block">
         <div class="main-name">{{ p.fullName|default:"" }}</div>
         {% if p.jobTitle %}<div class="main-jobtitle">{{ p.jobTitle }}</div>{% endif %}
       </div>
       {% endif %}
-      {% endwith %}
 
       {% for section in d.sections %}
 
@@ -357,7 +383,7 @@
           <div class="item">
             <div class="item-header">
               <div class="item-header-left">
-                <div class="item-title">{{ item.position|default:item.title|default:"" }}</div>
+                <div class="item-title">{{ item.position|default:"" }}</div>
               </div>
               <div class="item-header-right">
                 <div class="item-date">
@@ -402,7 +428,7 @@
           <div class="item">
             <div class="item-header">
               <div class="item-header-left">
-                <div class="item-title">{{ item.name|default:item.title|default:"" }}</div>
+                <div class="item-title">{{ item.name|default:"" }}</div>
               </div>
               {% if item.url %}
               <div class="item-header-right">
@@ -421,7 +447,7 @@
           <div class="section-title">{{ section.title|default:"Certificates" }}</div>
           {% for item in section.items %}
           <div class="cert-item">
-            <div class="item-title">{{ item.name|default:item.title|default:"" }}</div>
+            <div class="item-title">{{ item.name|default:"" }}</div>
             <div class="cert-issuer">{{ item.issuer|default:"" }} {% if item.date %}· {{ item.date }}{% endif %}</div>
           </div>
           {% endfor %}
@@ -432,6 +458,7 @@
     </div>
 
   </div>
+  {% endwith %}
   {% endwith %}
 
 </body>
