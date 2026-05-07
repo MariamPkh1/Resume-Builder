@@ -1,0 +1,438 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      color: #222;
+      background: linear-gradient(to right, #2e3d52 220px, #f8fafc 220px);
+    }
+
+    .watermark {
+      position: fixed;
+      top: 45%;
+      left: 10%;
+      right: 10%;
+      text-align: center;
+      font-size: 48px;
+      opacity: 0.12;
+      transform: rotate(-20deg);
+      z-index: 0;
+      color: #000;
+    }
+
+    .layout {
+      display: table;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+      table-layout: fixed;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      display: table-cell;
+      width: 220px;
+      color: #e2e8f0;
+      padding: 32px 16px;
+      vertical-align: top;
+    }
+
+    .sidebar-section {
+      margin-bottom: 24px;
+    }
+
+    .sidebar-section-title {
+      font-size: 8px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #7c92aa;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #3d5068;
+    }
+
+    /* Contact items — each with its own subtle divider line */
+    .sidebar-contact-item {
+      font-size: 10.5px;
+      color: #c5d3e0;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      line-height: 1.4;
+      word-wrap: break-word;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      border-bottom: 1px solid rgba(124, 146, 170, 0.2);
+    }
+
+    .sidebar-contact-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .sidebar-contact-label {
+      font-size: 9px;
+      color: #7c92aa;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 4px;
+    }
+
+    .sidebar-contact-value {
+      color: #c5d3e0;
+      word-wrap: break-word;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    /* Skills — inline-block pills that wrap naturally (WeasyPrint-safe) */
+    .sidebar-skills {
+      font-size: 0; /* removes whitespace gaps between inline-blocks */
+      line-height: 0;
+    }
+
+    .sidebar-skill {
+      display: inline-block;
+      background: #3d5068;
+      color: #c5d3e0;
+      border-radius: 3px;
+      padding: 4px 8px;
+      font-size: 9.5px;
+      line-height: 1.2;
+      margin: 0 4px 4px 0;
+      max-width: 100%;
+      word-wrap: break-word;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      vertical-align: top;
+    }
+
+    /* Languages — table layout for reliable two-column rendering */
+    .sidebar-lang-item {
+      display: table;
+      width: 100%;
+      font-size: 10.5px;
+      color: #c5d3e0;
+      margin-bottom: 5px;
+    }
+
+    .sidebar-lang-name {
+      display: table-cell;
+      text-align: left;
+    }
+
+    .sidebar-lang-level {
+      display: table-cell;
+      text-align: right;
+      font-size: 9.5px;
+      color: #7c92aa;
+    }
+
+    /* ── MAIN ── */
+    .main {
+      display: table-cell;
+      padding: 32px 30px;
+      background: #f8fafc;
+      vertical-align: top;
+    }
+
+    /* Name block */
+    .name-block {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .main-name {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1a202c;
+      line-height: 1.1;
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
+    }
+
+    .main-jobtitle {
+      font-size: 14px;
+      color: #3b82f6;
+      font-weight: 400;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 8.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #94a3b8;
+      margin-bottom: 10px;
+    }
+
+    .summary-text {
+      font-size: 11.5px;
+      color: #4a5568;
+      line-height: 1.7;
+    }
+
+    .item {
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+    }
+
+    /* Item header — table layout for reliable left/right alignment */
+    .item-header {
+      display: table;
+      width: 100%;
+      margin-bottom: 3px;
+    }
+
+    .item-header-left {
+      display: table-cell;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .item-header-right {
+      display: table-cell;
+      vertical-align: top;
+      text-align: right;
+      white-space: nowrap;
+      padding-left: 8px;
+    }
+
+    .item-degree {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+
+    .item-school {
+      font-size: 13px;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .item-title {
+      font-weight: 700;
+      font-size: 12.5px;
+      color: #1a202c;
+    }
+
+    .item-date {
+      font-size: 9.5px;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+
+    .item-subtitle {
+      font-size: 10.5px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .item-description {
+      font-size: 10.5px;
+      color: #4a5568;
+      margin-top: 5px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    .cert-item { font-size: 11.5px; margin-bottom: 6px; }
+    .cert-issuer { font-size: 10.5px; color: #64748b; }
+  </style>
+</head>
+<body>
+
+  {% if watermark %}
+    <div class="watermark">Made with Nebula</div>
+  {% endif %}
+
+  {% with d=cv.cv_data %}
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      {% with p=d.personal_info %}
+      {% if p %}
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Personal Information</div>
+        {% if p.email %}
+        <div class="sidebar-contact-item">
+          <span class="sidebar-contact-label">Email:</span>
+          <span class="sidebar-contact-value">{{ p.email }}</span>
+        </div>
+        {% endif %}
+        {% if p.phone %}
+        <div class="sidebar-contact-item">
+          <span class="sidebar-contact-label">Phone:</span>
+          <span class="sidebar-contact-value">{{ p.phone }}</span>
+        </div>
+        {% endif %}
+        {% if p.location %}
+        <div class="sidebar-contact-item">
+          <span class="sidebar-contact-label">Location:</span>
+          <span class="sidebar-contact-value">{{ p.location }}</span>
+        </div>
+        {% endif %}
+        {% if p.linkedin %}
+        <div class="sidebar-contact-item">
+          <span class="sidebar-contact-label">LinkedIn:</span>
+          <span class="sidebar-contact-value">{{ p.linkedin }}</span>
+        </div>
+        {% endif %}
+        {% if p.website %}
+        <div class="sidebar-contact-item">
+          <span class="sidebar-contact-label">Website:</span>
+          <span class="sidebar-contact-value">{{ p.website }}</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      {% for section in d.sections %}
+        {% if section.type == "skills" %}
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">{{ section.title|default:"Skills" }}</div>
+          <div class="sidebar-skills">
+            {% for item in section.items %}
+              {% with name=item.name|default:item %}
+              {% if name %}<span class="sidebar-skill">{{ name }}</span>{% endif %}
+              {% endwith %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if section.type == "languages" %}
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">{{ section.title|default:"Languages" }}</div>
+          {% for item in section.items %}
+          <div class="sidebar-lang-item">
+            <span class="sidebar-lang-name">{{ item.name|default:"" }}</span>
+            <span class="sidebar-lang-level">{{ item.level|default:"" }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      {% with p=d.personal_info %}
+      {% if p %}
+      <div class="name-block">
+        <div class="main-name">{{ p.fullName|default:"" }}</div>
+        {% if p.jobTitle %}<div class="main-jobtitle">{{ p.jobTitle }}</div>{% endif %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      {% for section in d.sections %}
+
+        {% if section.type == "summary" %}
+        <div class="section">
+          <div class="section-title">{{ section.title|default:"Summary" }}</div>
+          <div class="summary-text">{{ section.content|default:""|linebreaksbr }}</div>
+        </div>
+        {% endif %}
+
+        {% if section.type == "experience" %}
+        <div class="section">
+          <div class="section-title">{{ section.title|default:"Experience" }}</div>
+          {% for item in section.items %}
+          <div class="item">
+            <div class="item-header">
+              <div class="item-header-left">
+                <div class="item-title">{{ item.position|default:item.title|default:"" }}</div>
+              </div>
+              <div class="item-header-right">
+                <div class="item-date">
+                  {{ item.startDate|default:"" }}{% if item.startDate %} — {% endif %}
+                  {% if item.current %}Present{% else %}{{ item.endDate|default:"" }}{% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="item-subtitle">{{ item.company|default:"" }}{% if item.location %} · {{ item.location }}{% endif %}</div>
+            {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if section.type == "education" %}
+        <div class="section">
+          <div class="section-title">{{ section.title|default:"Education" }}</div>
+          {% for item in section.items %}
+          <div class="item">
+            <div class="item-header">
+              <div class="item-header-left">
+                <div class="item-degree">{{ item.degree|default:"" }}{% if item.field %} in {{ item.field }}{% endif %}</div>
+                <div class="item-school">{{ item.school|default:"" }}</div>
+              </div>
+              <div class="item-header-right">
+                <div class="item-date">
+                  {{ item.startDate|default:"" }}{% if item.startDate %} — {% endif %}{{ item.endDate|default:"" }}
+                </div>
+              </div>
+            </div>
+            {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if section.type == "projects" %}
+        <div class="section">
+          <div class="section-title">{{ section.title|default:"Projects" }}</div>
+          {% for item in section.items %}
+          <div class="item">
+            <div class="item-header">
+              <div class="item-header-left">
+                <div class="item-title">{{ item.name|default:item.title|default:"" }}</div>
+              </div>
+              {% if item.url %}
+              <div class="item-header-right">
+                <div class="item-date">{{ item.url }}</div>
+              </div>
+              {% endif %}
+            </div>
+            {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if section.type == "certificates" %}
+        <div class="section">
+          <div class="section-title">{{ section.title|default:"Certificates" }}</div>
+          {% for item in section.items %}
+          <div class="cert-item">
+            <div class="item-title">{{ item.name|default:item.title|default:"" }}</div>
+            <div class="cert-issuer">{{ item.issuer|default:"" }} {% if item.date %}· {{ item.date }}{% endif %}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+      {% endfor %}
+    </div>
+
+  </div>
+  {% endwith %}
+
+</body>
+</html>
