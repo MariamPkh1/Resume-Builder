@@ -189,7 +189,7 @@ class CVViewSet(viewsets.ModelViewSet):
         is_free = effective_tier == "free"
 
         try:
-            template = request.query_params.get("template", "classic")
+            template = request.query_params.get("template") or cv.template or "classic"
             pdf_bytes = render_cv_pdf(cv=cv, watermark=is_free, template=template)
             request.user.pdfs_downloaded += 1
             request.user.save(update_fields=["pdfs_downloaded", "updated_at"])
