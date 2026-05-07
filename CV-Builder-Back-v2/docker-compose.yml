@@ -8,7 +8,7 @@ services:
     environment:
       SECRET_KEY: dev-secret
       DEBUG: "1"
-      OPENAI_API_KEY: test-key
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
       PAYMENT_STUB_MODE: "1"
     volumes:
       - .:/app

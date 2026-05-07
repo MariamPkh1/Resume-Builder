@@ -30,7 +30,8 @@ const Register = () => {
       setGoogleLoading(true);
       try {
         const res = await api.post("/api/auth/google/", { id_token: response.credential });
-        const { access, refresh, user } = res.data;
+        const { user, tokens } = res.data;
+        const { access, refresh } = tokens;
         await login({ email: user.email }, { access, refresh });
         localStorage.setItem("display_name", user.full_name);
         navigate("/app");
