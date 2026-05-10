@@ -56,7 +56,10 @@ export const AuthProvider = ({ children }) => {
             if (!refreshToken) throw new Error("No refresh token");
 
             // Call the refresh endpoint from Guide Section 1
-            const res = await api.post("/api/auth/token/refresh/", { refresh: refreshToken }, {_retry:true});
+          const res = await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/auth/token/refresh/`,
+              { refresh: refreshToken }
+          );
             const { access } = res.data;
             
             localStorage.setItem("access_token", access);

@@ -41,11 +41,65 @@ const IMPROVABLE = {
 
 // Pull plain text from a section regardless of its shape
 const getContent = (section) => {
-  if (typeof section.content === "string" && section.content.trim()) return section.content;
-  if (Array.isArray(section.items)) {
-    return section.items.map((item) => item.description || "").join("\n\n");
+  // 1. Plain-string sections (summary, custom text)
+  if (typeof section.content === "string" && section.content.trim()) {
+    return section.content.trim();
   }
-  return section.description || "";
+
+  // 2. Structured sections — serialize items based on type
+  if (Array.isArray(section.items) && section.items.length > 0) {
+    const text = section.items
+      .map((item) => {
+        switch (section.type) {
+          case "skills":
+            return item.name || item.skill || item.description || "";
+
+          case "experience":
+            return [
+              [item.position, item.company].filter(Boolean).join(" — "),
+              [item.startDate, item.endDate].filter(Boolean).join(" – "),
+              item.location,
+              item.description,
+              Array.isArray(item.bullets) ? item.bullets.map(b => `• ${b}`).join("\n") : "",
+            ].filter(Boolean).join("\n");
+
+          case "education":
+            return [
+              [item.degree, item.field].filter(Boolean).join(", "),
+              item.school || item.institution,
+              [item.startDate, item.endDate].filter(Boolean).join(" – "),
+              item.gpa && `GPA: ${item.gpa}`,
+              item.description,
+            ].filter(Boolean).join("\n");
+
+          case "projects":
+            return [
+              item.name || item.title,
+              item.technologies && `Tech: ${item.technologies}`,
+              item.description,
+              item.link,
+            ].filter(Boolean).join("\n");
+
+          case "certificates":
+            return [
+              item.name,
+              item.issuer,
+              item.date,
+              item.description,
+            ].filter(Boolean).join("\n");
+
+          default:
+            return item.description || item.name || item.title || "";
+        }
+      })
+      .filter((block) => block && block.trim())
+      .join("\n\n");
+
+    if (text.trim()) return text;
+  }
+
+  // 3. Fallback
+  return (section.description || "").trim();
 };
 
 // ─── Internal view states ─────────────────────────────────────────────────────
@@ -308,6 +362,8 @@ const AIImprovePanel = ({ resumeData, language: languageProp, cvId, onClose, onA
 
   // ── Call the API ────────────────────────────────────────────────────────────
   const runImprove = async (section) => {
+      console.log("Section being improved:", JSON.stringify(section, null, 2));
+    console.log("Extracted content:", getContent(section));
     setActiveSection(section);
     setResult(null);
     setError(null);

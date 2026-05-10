@@ -11,7 +11,7 @@ api.interceptors.request.use((config) => {
     "/api/auth/verify-email/", 
     "/api/auth/token/", 
     "/api/auth/token/refresh/",
-    "/api/auth/logout/",
+    //"/api/auth/logout/",
     "/api/auth/google/",
     "/api/auth/password/forgot/",
     "/api/auth/password/reset/"

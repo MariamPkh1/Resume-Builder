@@ -234,7 +234,7 @@ const UniversalBuilder = () => {
     setIsExporting(true);
     debouncedSave.flush();
     try {
-      const response = await api.get(`/api/cvs/${resumeId}/export/pdf/`, {
+      const response = await api.get(`/api/cvs/${resumeId}/export/pdf/?template=${template}`, {
         responseType: "blob",
       });
       const contentType = response.headers["content-type"] || "";
