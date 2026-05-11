@@ -2,6 +2,9 @@ import React, { useRef } from "react";
 import { User, Mail, Phone, MapPin, Linkedin, Briefcase, Camera, X, Circle, Square } from "lucide-react";
 import { useLanguage } from "../../../context/LanguageContext";
 
+const MAX_PHOTO_SIZE_MB = 5;
+const MAX_PHOTO_SIZE_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024;
+
 const PersonalInfoForm = ({ data = {}, update, showPhoto = false }) => {
   const fileInputRef = useRef(null);
   const { t } = useLanguage();
@@ -10,12 +13,12 @@ const PersonalInfoForm = ({ data = {}, update, showPhoto = false }) => {
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.size <= 1024 * 1024) {
+    if (file && file.size <= MAX_PHOTO_SIZE_BYTES) {
       const reader = new FileReader();
       reader.onloadend = () => update("photo", reader.result);
       reader.readAsDataURL(file);
     } else if (file) {
-      alert("Image must be under 1MB");
+      alert(`Image must be under ${MAX_PHOTO_SIZE_MB}MB`);
     }
   };
 

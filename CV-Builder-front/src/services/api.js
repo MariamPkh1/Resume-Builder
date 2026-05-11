@@ -13,8 +13,8 @@ api.interceptors.request.use((config) => {
     "/api/auth/token/refresh/",
     //"/api/auth/logout/",
     "/api/auth/google/",
-    "/api/auth/password/forgot/",
-    "/api/auth/password/reset/"
+    "/api/auth/forgot-password/",
+    "/api/auth/reset-password/"
   ];
   
   const isPublicPath = publicPaths.some(path => config.url.includes(path));

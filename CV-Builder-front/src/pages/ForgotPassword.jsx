@@ -15,7 +15,7 @@ const ForgotPassword = () => {
     setLoading(true);
     setError("");
     try {
-      await api.post("/api/auth/password/forgot/", { email });
+      await api.post("/api/auth/forgot-password/", { email });
       setSubmitted(true);
     } catch (err) {
       setError(err.response?.data?.detail || "Something went wrong. Please try again.");
@@ -30,9 +30,12 @@ const ForgotPassword = () => {
         <div className="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-md text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-6" />
           <h2 className="text-2xl font-black text-gray-900 mb-2">Check your email</h2>
-          <p className="text-gray-500 mb-8">If an account exists for {email}, you will receive a password reset link shortly.</p>
-          <button onClick={() => navigate("/login")} className="text-amber-600 font-bold hover:underline">
-            Back to Login
+          <p className="text-gray-500 mb-8">If an account exists for {email}, you will receive a 6-digit reset code shortly.</p>
+          <button
+            onClick={() => navigate("/password-reset", { state: { email } })}
+            className="text-amber-600 font-bold hover:underline"
+          >
+            Enter reset code
           </button>
         </div>
       </div>
@@ -46,7 +49,7 @@ const ForgotPassword = () => {
           <ArrowLeft size={16} /> Back to Login
         </button>
         <h2 className="text-3xl font-black text-gray-900 mb-2">Reset Password</h2>
-        <p className="text-gray-500 mb-8 text-sm">Enter your email and we'll send you a link to get back into your account.</p>
+        <p className="text-gray-500 mb-8 text-sm">Enter your email and we will send you a 6-digit reset code.</p>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
