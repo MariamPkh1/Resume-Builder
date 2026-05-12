@@ -1,4 +1,8 @@
+import os
+
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -180,6 +184,31 @@ class CVViewSet(viewsets.ModelViewSet):
 
         serializer = CVDetailSerializer(cv, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="upload-photo")
+    def upload_photo(self, request, pk=None):
+        cv = self.get_object()
+        photo = request.FILES.get("photo")
+
+        if not photo:
+            return Response({"detail": "No photo provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not photo.content_type.startswith("image/"):
+            return Response({"detail": "File must be an image."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if photo.size > 5 * 1024 * 1024:
+            return Response({"detail": "Image must be under 5MB."}, status=status.HTTP_400_BAD_REQUEST)
+
+        ext = os.path.splitext(photo.name)[1].lower() or ".jpg"
+        dest = f"cv_photos/{cv.id}/photo{ext}"
+
+        if default_storage.exists(dest):
+            default_storage.delete(dest)
+
+        default_storage.save(dest, ContentFile(photo.read()))
+        url = request.build_absolute_uri(settings.MEDIA_URL + dest)
+
+        return Response({"url": url}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["get"], url_path="export/pdf")
     def export_pdf(self, request, pk=None):

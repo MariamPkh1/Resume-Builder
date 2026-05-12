@@ -199,7 +199,7 @@ const UniversalBuilder = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       updateCvData({
-        personal_info: { ...resumeData.cv_data.personal_info, photo_url: data.url },
+        personal_info: { ...resumeData.cv_data.personal_info, photo: data.url },
       });
       setSaveStatus("saved");
     } catch {
