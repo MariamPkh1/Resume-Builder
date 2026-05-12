@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Check, Loader2 } from "lucide-react";
 import { LABEL_COLORS } from "./labelColors";
 import api from "../../services/api";
+import { showToast } from "../../utils/toast";
 
 const CreateLabelModal = ({ onClose, onCreate }) => {
   const [name, setName] = useState("");
@@ -16,7 +17,7 @@ const CreateLabelModal = ({ onClose, onCreate }) => {
       onCreate(res.data);
       onClose();
     } catch {
-      alert("Failed to create label.");
+      showToast({ message: "Failed to create label." });
     } finally {
       setLoading(false);
     }

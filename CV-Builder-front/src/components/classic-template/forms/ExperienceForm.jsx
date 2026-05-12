@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Briefcase, Trash2, X, Plus, Sparkles, Loader2, Check, GripVertical } from "lucide-react";
 import { improveSectionAPI } from "../../../services/aiService";
 import { useLanguage } from "../../../context/LanguageContext";
+import { showToast } from "../../../utils/toast";
 
 const ExperienceForm = ({ section, setResumeData, cvId, dragHandleProps, onDeleteSection }) => {
   const { t, language } = useLanguage();
@@ -11,7 +12,7 @@ const ExperienceForm = ({ section, setResumeData, cvId, dragHandleProps, onDelet
 
   const handleAIImprove = async (itemId, currentText) => {
     if (!currentText || currentText.length < 15) {
-      alert("Please write a bit more so the AI has context to improve!");
+      showToast({ message: "Please write a bit more so the AI has context to improve!" });
       return;
     }
     setImprovingId(itemId);

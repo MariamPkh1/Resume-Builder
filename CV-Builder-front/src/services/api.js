@@ -9,6 +9,7 @@ api.interceptors.request.use((config) => {
   const publicPaths = [
     "/api/auth/register/", 
     "/api/auth/verify-email/", 
+    "/api/auth/login/",
     "/api/auth/token/", 
     "/api/auth/token/refresh/",
     //"/api/auth/logout/",

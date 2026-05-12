@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { User, Mail, Phone, MapPin, Linkedin, Briefcase, Camera, X, Circle, Square } from "lucide-react";
 import { useLanguage } from "../../../context/LanguageContext";
+import { showToast } from "../../../utils/toast";
 
 const MAX_PHOTO_SIZE_MB = 5;
 const MAX_PHOTO_SIZE_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024;
@@ -18,7 +19,7 @@ const PersonalInfoForm = ({ data = {}, update, showPhoto = false }) => {
       reader.onloadend = () => update("photo", reader.result);
       reader.readAsDataURL(file);
     } else if (file) {
-      alert(`Image must be under ${MAX_PHOTO_SIZE_MB}MB`);
+      showToast({ message: `Image must be under ${MAX_PHOTO_SIZE_MB}MB` });
     }
   };
 

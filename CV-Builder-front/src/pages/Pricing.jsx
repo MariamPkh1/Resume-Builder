@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import api from "../services/api";
+import { showToast } from "../utils/toast";
 
 // ─── Plan data builder (uses translation function) ───────────────────────────
 const buildPlans = (t) => [
@@ -313,7 +314,7 @@ const Pricing = () => {
       }
     } catch (error) {
       console.error("Payment failed", error);
-      alert(t("pricing.paymentError"));
+      showToast({ message: t("pricing.paymentError") });
     } finally {
       setLoadingPlan(null);
     }

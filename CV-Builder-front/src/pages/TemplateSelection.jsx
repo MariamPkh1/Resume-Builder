@@ -5,6 +5,7 @@ import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import NavBar from "../components/NavBar";
+import { showToast } from "../utils/toast";
 
 // ── DROP YOUR TEMPLATE SCREENSHOT PATHS HERE ─────────────────────────────────
 const TEMPLATE_PREVIEWS = {
@@ -143,11 +144,11 @@ const TemplateSelection = () => {
       navigate(`/app/builder/${templateId}/${response.data.id}`);
     } catch (err) {
       if (err.response?.status === 403) {
-        alert(err.response?.data?.detail || "You've reached the Free tier limit. Please upgrade to Pro!");
+        showToast({ message: err.response?.data?.detail || "You've reached the Free tier limit. Please upgrade to Pro!" });
         navigate("/pricing");
       } else {
         console.error("CV creation failed:", err.response?.data);
-        alert("Could not create resume. Please check your connection.");
+        showToast({ message: "Could not create resume. Please check your connection." });
       }
     } finally {
       setIsCreating(null);

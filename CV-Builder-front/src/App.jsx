@@ -15,11 +15,13 @@ import Pricing from "./pages/Pricing";
 import Settings from "./pages/Settings";
 import Contact from "./pages/Contact";
 import UniversalBuilder from "./components/builder/UniversalBuilder";
+import ToastViewport from "./components/ui/ToastViewport";
 
 
 const App = () => {
   return (
     <AuthProvider>
+      <ToastViewport />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />

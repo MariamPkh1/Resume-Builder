@@ -7,6 +7,7 @@ import debounce from "lodash/debounce";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { showToast } from "../../utils/toast";
 
 import EditorShell from "../../pages/EditorShell";
 import LivePreview from "../classic-template/LivePreview";
@@ -126,7 +127,7 @@ const UniversalBuilder = () => {
             : msg && typeof msg === "object"
               ? JSON.stringify(msg, null, 2)
               : "Unknown error";
-        alert(`Template switch failed:\n\n${errStr}`);
+        showToast({ message: `Template switch failed: ${errStr}` });
         setSaveStatus("error");
       }
     },
@@ -203,7 +204,7 @@ const UniversalBuilder = () => {
       setSaveStatus("saved");
     } catch {
       setSaveStatus("error");
-      alert("Photo upload failed.");
+      showToast({ message: "Photo upload failed." });
     }
   };
 
@@ -263,9 +264,9 @@ const UniversalBuilder = () => {
       refreshUser?.();
     } catch (err) {
       if (err.response?.status === 403) {
-        alert(err.response?.data?.detail || "Export not available on your plan. Upgrade to continue.");
+        showToast({ message: err.response?.data?.detail || "Export not available on your plan. Upgrade to continue." });
         navigate("/pricing");
-      } else alert("Export failed. Please try again.");
+      } else showToast({ message: "Export failed. Please try again." });
     } finally {
       setIsExporting(false);
     }

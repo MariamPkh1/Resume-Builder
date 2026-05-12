@@ -10,6 +10,7 @@ import CreateLabelModal from "../components/dashboard/CreateLabelModal";
 import api from "../services/api";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
+import { showToast } from "../utils/toast";
 // example
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ const Dashboard = () => {
       setResumes((prev) => prev.filter((r) => r.id !== id));
       refreshUser();
     } catch {
-      alert(t("dashboard.deleteFailed"));
+      showToast({ message: t("dashboard.deleteFailed") });
     }
   };
 
@@ -101,9 +102,9 @@ const Dashboard = () => {
       refreshUser();
     } catch (err) {
       if (err.response?.status === 403) {
-        alert(err.response?.data?.detail || "CV limit reached. Upgrade to duplicate more.");
+        showToast({ message: err.response?.data?.detail || "CV limit reached. Upgrade to duplicate more." });
         navigate("/pricing");
-      } else alert("Duplicate failed.");
+      } else showToast({ message: "Duplicate failed." });
     }
   };
 
@@ -111,14 +112,14 @@ const Dashboard = () => {
     try {
       await api.post(`/api/cvs/${resume.id}/archive/`);
       setResumes((prev) => prev.filter((r) => r.id !== resume.id));
-    } catch { alert("Archive failed."); }
+    } catch { showToast({ message: "Archive failed." }); }
   };
 
   const handleUnarchive = async (resume) => {
     try {
       await api.post(`/api/cvs/${resume.id}/unarchive/`);
       setResumes((prev) => prev.filter((r) => r.id !== resume.id));
-    } catch { alert("Unarchive failed."); }
+    } catch { showToast({ message: "Unarchive failed." }); }
   };
 
   const handleLabelUpdate = (cvId, newLabels) => {
@@ -140,7 +141,7 @@ const Dashboard = () => {
         }))
       );
     } catch { 
-      alert("Failed to delete label."); 
+      showToast({ message: "Failed to delete label." }); 
     }
   };
 

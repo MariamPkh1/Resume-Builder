@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Loader2, Check } from "lucide-react";
 import { colorStyle } from "./labelColors";
 import api from "../../services/api";
+import { showToast } from "../../utils/toast";
 
 const LabelPopover = ({ cvId, cvLabels, allLabels, anchorRef, onUpdate, onClose }) => {
   const [loading, setLoading] = useState(null);
@@ -36,7 +37,7 @@ const LabelPopover = ({ cvId, cvLabels, allLabels, anchorRef, onUpdate, onClose 
       onUpdate(cvId, res.data.labels);
     } catch {
       setLocalLabels(cvLabels); // revert on failure
-      alert("Failed to update label.");
+      showToast({ message: "Failed to update label." });
     } finally {
       setLoading(null);
     }

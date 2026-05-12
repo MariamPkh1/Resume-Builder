@@ -47,6 +47,25 @@ export const AuthProvider = ({ children }) => {
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
+        const authPublicPaths = [
+          "/api/auth/login/",
+          "/api/auth/register/",
+          "/api/auth/verify-email/",
+          "/api/auth/token/",
+          "/api/auth/token/refresh/",
+          "/api/auth/google/",
+          "/api/auth/forgot-password/",
+          "/api/auth/reset-password/",
+        ];
+        const isAuthPublicRequest = authPublicPaths.some((path) =>
+          originalRequest?.url?.includes(path)
+        );
+
+        // Do not auto-refresh/logout for expected auth failures
+        // (e.g. wrong login credentials should stay on the form with an error message).
+        if (isAuthPublicRequest) {
+          return Promise.reject(error);
+        }
         
         // If error is 401 and we haven't retried yet
         if (error.response?.status === 401 && !originalRequest._retry) {
