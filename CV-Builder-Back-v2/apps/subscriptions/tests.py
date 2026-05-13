@@ -19,6 +19,8 @@ from apps.subscriptions.services import (
     expire_due_paid_subscriptions,
     expire_paid_subscription,
     expire_user_trial,
+    start_pro_trial,
+    cancel_user_trial,
 )
 
 
@@ -855,6 +857,164 @@ class SubscriptionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["detail"], "No active paid subscription to cancel.")
         self.assertEqual(SubscriptionHistory.objects.count(), 0)
+
+    # ── Trial tests ──────────────────────────────────────────────────────────
+
+    def test_registration_does_not_grant_trial(self):
+        response = self.client.post(
+            "/api/auth/register/",
+            {
+                "email": "newtrial@example.com",
+                "password": "StrongPass123",
+                "repeat_password": "StrongPass123",
+                "full_name": "New User",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(email="newtrial@example.com")
+        self.assertIsNone(user.trial_ends_at)
+        self.assertEqual(user.subscription_tier, "free")
+        self.assertEqual(SubscriptionHistory.objects.filter(user=user).count(), 0)
+
+    def test_start_trial_grants_pro_access_to_free_user(self):
+        user = self.create_user(subscription_tier="free")
+        self.authenticate(user)
+
+        response = self.client.post("/api/subscriptions/start-trial/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertIsNotNone(user.trial_ends_at)
+        self.assertGreater(user.trial_ends_at, timezone.now())
+        self.assertEqual(user.effective_tier(), "pro")
+        self.assertEqual(
+            SubscriptionHistory.objects.filter(
+                user=user, event_type=SubscriptionHistory.EventType.TRIAL_STARTED
+            ).count(),
+            1,
+        )
+
+    def test_start_trial_rejected_for_already_active_trial(self):
+        user = self.create_user(
+            subscription_tier="free",
+            trial_ends_at=timezone.now() + timedelta(days=5),
+        )
+        self.authenticate(user)
+
+        response = self.client.post("/api/subscriptions/start-trial/")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("already have an active trial", response.data["detail"])
+
+    def test_start_trial_rejected_when_trial_already_used(self):
+        user = self.create_user(subscription_tier="free")
+        # Simulate previously used trial via history
+        SubscriptionHistory.objects.create(
+            user=user,
+            event_type=SubscriptionHistory.EventType.TRIAL_STARTED,
+            from_tier="free",
+            to_tier="pro",
+        )
+        self.authenticate(user)
+
+        response = self.client.post("/api/subscriptions/start-trial/")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("already been used", response.data["detail"])
+
+    def test_start_trial_rejected_for_paid_user(self):
+        user = self.create_user(subscription_tier="pro")
+        self.authenticate(user)
+
+        response = self.client.post("/api/subscriptions/start-trial/")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("free-tier", response.data["detail"])
+
+    def test_cancel_trial_returns_user_to_free_and_archives_excess_cvs(self):
+        user = self.create_user(
+            subscription_tier="free",
+            trial_ends_at=timezone.now() + timedelta(days=5),
+        )
+        cv1 = self.create_cv(user, title="CV 1")
+        cv2 = self.create_cv(user, title="CV 2")
+        self.authenticate(user)
+
+        response = self.client.post("/api/subscriptions/cancel-trial/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertIsNone(user.trial_ends_at)
+        self.assertEqual(user.effective_tier(), "free")
+        cv1.refresh_from_db()
+        cv2.refresh_from_db()
+        # Only 1 CV kept active after canceling trial (same as expiry behaviour)
+        active = [cv1.is_archived, cv2.is_archived].count(False)
+        self.assertEqual(active, 1)
+        self.assertEqual(
+            SubscriptionHistory.objects.filter(
+                user=user, event_type=SubscriptionHistory.EventType.TRIAL_ENDED
+            ).count(),
+            1,
+        )
+
+    def test_cancel_trial_rejected_when_no_active_trial(self):
+        user = self.create_user(subscription_tier="free")
+        self.authenticate(user)
+
+        response = self.client.post("/api/subscriptions/cancel-trial/")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("No active trial", response.data["detail"])
+
+    def test_payment_success_clears_trial_ends_at(self):
+        user = self.create_user(
+            subscription_tier="free",
+            trial_ends_at=timezone.now() + timedelta(days=4),
+        )
+        row = self.create_payment_session(user, order_id="NEB-trial-pay")
+
+        self.client.get("/api/subscriptions/payment-success/?order_id=NEB-trial-pay")
+
+        user.refresh_from_db()
+        self.assertIsNone(user.trial_ends_at)
+        self.assertEqual(user.subscription_tier, "pro")
+
+    def test_trial_eligible_false_after_trial_started(self):
+        user = self.create_user(subscription_tier="free")
+        start_pro_trial(user)
+        user.refresh_from_db()
+        # Can't start a second trial while one is active
+        self.assertFalse(
+            not SubscriptionHistory.objects.filter(
+                user=user, event_type=SubscriptionHistory.EventType.TRIAL_STARTED
+            ).exists()
+        )
+
+    def test_subscription_status_includes_trial_eligible(self):
+        user = self.create_user(subscription_tier="free")
+        self.authenticate(user)
+
+        response = self.client.get("/api/subscriptions/status/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("trial_eligible", response.data)
+        self.assertTrue(response.data["trial_eligible"])
+
+    def test_subscription_status_trial_eligible_false_after_trial_used(self):
+        user = self.create_user(subscription_tier="free")
+        SubscriptionHistory.objects.create(
+            user=user,
+            event_type=SubscriptionHistory.EventType.TRIAL_STARTED,
+            from_tier="free",
+            to_tier="pro",
+        )
+        self.authenticate(user)
+
+        response = self.client.get("/api/subscriptions/status/")
+
+        self.assertFalse(response.data["trial_eligible"])
 
     def test_subscription_status_includes_latest_payment(self):
         user = self.create_user(subscription_tier="pro")

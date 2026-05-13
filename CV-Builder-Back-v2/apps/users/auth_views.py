@@ -34,11 +34,6 @@ from .serializers import (
     LogoutSerializer,
 )
 
-from django.utils import timezone
-from datetime import timedelta
-
-from apps.subscriptions.models import SubscriptionHistory
-
 User = get_user_model()
 
 def get_tokens_for_user(user):
@@ -84,16 +79,13 @@ class RegisterAPIView(APIView):
 
         try:
             with transaction.atomic():
-                trial_ends_at = timezone.now() + timedelta(days=7)
-
                 user = User.objects.create_user(
                     email=data["email"],
                     password=data["password"],
                     full_name=data.get("full_name", ""),
                     is_active=True,
                     email_verified=False,
-                    subscription_tier="free",  # base tier remains free
-                    trial_ends_at=trial_ends_at,  # effective tier becomes pro during trial
+                    subscription_tier="free",
                 )
 
                 code_row = issue_user_action_code(
@@ -103,17 +95,6 @@ class RegisterAPIView(APIView):
                 )
 
                 send_verification_code_email(user.email, code_row.code)
-
-                SubscriptionHistory.objects.create(
-                    user=user,
-                    event_type=SubscriptionHistory.EventType.TRIAL_STARTED,
-                    from_tier="free",
-                    to_tier="pro",
-                    metadata={
-                        "trial_days": 7,
-                        "trial_ends_at": trial_ends_at.isoformat(),
-                    },
-                )
 
         except Exception as e:
             return Response(
@@ -127,7 +108,7 @@ class RegisterAPIView(APIView):
         return Response(
             build_auth_response(
                 user,
-                message="Registration successful. 7-day Pro trial activated!",
+                message="Registration successful.",
             ),
             status=status.HTTP_201_CREATED,
         )

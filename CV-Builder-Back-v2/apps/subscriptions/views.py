@@ -17,6 +17,8 @@ from .services import (
     process_payment_return,
     process_gateway_webhook,
     is_stub_mode,
+    start_pro_trial,
+    cancel_user_trial,
 )
 
 class SubscriptionStatusAPIView(APIView):
@@ -214,6 +216,46 @@ class FastooWebhookAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+class StartProTrialAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            start_pro_trial(request.user)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        request.user.refresh_from_db()
+        return Response(
+            {
+                "detail": "Your 7-day Pro trial has started.",
+                "status": get_subscription_status_payload(request.user),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class CancelTrialAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        canceled = cancel_user_trial(request.user)
+        if not canceled:
+            return Response(
+                {"detail": "No active trial to cancel."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        request.user.refresh_from_db()
+        return Response(
+            {
+                "detail": "Trial canceled. You have been returned to the free plan.",
+                "status": get_subscription_status_payload(request.user),
+            },
+            status=status.HTTP_200_OK,
+        )
+
 
 class CancelSubscriptionAPIView(APIView):
     permission_classes = [IsAuthenticated]

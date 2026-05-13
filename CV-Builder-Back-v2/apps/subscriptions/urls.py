@@ -7,11 +7,15 @@ from .views import (
     BOGWebhookAPIView,
     FastooWebhookAPIView,
     CancelSubscriptionAPIView,
+    StartProTrialAPIView,
+    CancelTrialAPIView,
 )
 
 urlpatterns = [
     path("subscriptions/status/", SubscriptionStatusAPIView.as_view(), name="subscriptions_status"),
     path("subscriptions/create-checkout/", CreateCheckoutAPIView.as_view(), name="subscriptions_create_checkout"),
+    path("subscriptions/start-trial/", StartProTrialAPIView.as_view(), name="subscriptions_start_trial"),
+    path("subscriptions/cancel-trial/", CancelTrialAPIView.as_view(), name="subscriptions_cancel_trial"),
     path("subscriptions/cancel/", CancelSubscriptionAPIView.as_view(), name="subscriptions_cancel"),
     path("subscriptions/payment-success/", PaymentSuccessAPIView.as_view(), name="subscriptions_payment_success"),
     path("subscriptions/payment-cancel/", PaymentCancelAPIView.as_view(), name="subscriptions_payment_cancel"),

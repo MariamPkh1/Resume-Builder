@@ -109,6 +109,81 @@ def downgrade_user_to_free(user, *, reason: str, now=None, keep_active: int = 2,
     return archived_count
 
 
+def start_pro_trial(user, *, trial_days: int = 7) -> bool:
+    """Grant a 7-day Pro trial to a free user who has never had one."""
+    now = timezone.now()
+
+    if user.subscription_tier != "free":
+        raise ValueError("Trial is only available for free-tier users.")
+
+    if user.trial_ends_at and user.trial_ends_at > now:
+        raise ValueError("You already have an active trial.")
+
+    already_used = SubscriptionHistory.objects.filter(
+        user=user,
+        event_type=SubscriptionHistory.EventType.TRIAL_STARTED,
+    ).exists()
+    if already_used:
+        raise ValueError("Trial has already been used.")
+
+    trial_ends_at = now + timezone.timedelta(days=trial_days)
+
+    with transaction.atomic():
+        user.trial_ends_at = trial_ends_at
+        user.save(update_fields=["trial_ends_at", "updated_at"])
+
+        SubscriptionHistory.objects.create(
+            user=user,
+            event_type=SubscriptionHistory.EventType.TRIAL_STARTED,
+            from_tier="free",
+            to_tier="pro",
+            metadata={
+                "trial_days": trial_days,
+                "trial_ends_at": trial_ends_at.isoformat(),
+                "source": "pro_plan_selection",
+            },
+        )
+
+    return True
+
+
+def cancel_user_trial(user, *, now=None) -> bool:
+    """Cancel an active trial without charging. Returns user to free tier."""
+    now = now or timezone.now()
+
+    if not user.trial_ends_at or user.trial_ends_at <= now:
+        return False
+
+    with transaction.atomic():
+        user.trial_ends_at = None
+        user.save(update_fields=["trial_ends_at", "updated_at"])
+
+        SubscriptionHistory.objects.create(
+            user=user,
+            event_type=SubscriptionHistory.EventType.TRIAL_ENDED,
+            from_tier="pro",
+            to_tier=user.subscription_tier,
+            metadata={"canceled_by_user": True, "canceled_at": now.isoformat()},
+        )
+
+        if user.subscription_tier == "free":
+            archived_count = archive_excess_cvs_for_free_user(user, keep_active=1)
+            if archived_count:
+                SubscriptionHistory.objects.create(
+                    user=user,
+                    event_type=SubscriptionHistory.EventType.DOWNGRADED,
+                    from_tier="pro",
+                    to_tier="free",
+                    metadata={
+                        "reason": "trial_canceled",
+                        "archived_cv_count": archived_count,
+                        "active_cv_limit_after_downgrade": 1,
+                    },
+                )
+
+    return True
+
+
 def expire_user_trial(user, *, now=None) -> bool:
     now = now or timezone.now()
     if not user.trial_ends_at or user.trial_ends_at > now:
@@ -445,11 +520,13 @@ def activate_subscription_from_payment(payment_session: PaymentSession):
     user.subscription_tier = new_tier
     user.subscription_cancel_at_period_end = False
     user.subscription_current_period_end = current_period_end
+    user.trial_ends_at = None  # clear any active trial when paid subscription activates
     user.save(
         update_fields=[
             "subscription_tier",
             "subscription_cancel_at_period_end",
             "subscription_current_period_end",
+            "trial_ends_at",
             "updated_at",
         ]
     )
@@ -490,6 +567,18 @@ def activate_subscription_from_payment(payment_session: PaymentSession):
     )
 
 
+def _is_trial_eligible(user) -> bool:
+    now = timezone.now()
+    if user.subscription_tier != "free":
+        return False
+    if user.trial_ends_at and user.trial_ends_at > now:
+        return False
+    return not SubscriptionHistory.objects.filter(
+        user=user,
+        event_type=SubscriptionHistory.EventType.TRIAL_STARTED,
+    ).exists()
+
+
 def get_subscription_status_payload(user):
     l = limits_for_user(user)
     latest_payment = user.payment_sessions.first()
@@ -497,6 +586,7 @@ def get_subscription_status_payload(user):
         "subscription_tier": user.subscription_tier,
         "effective_tier": user.effective_tier() if hasattr(user, "effective_tier") else user.subscription_tier,
         "trial_ends_at": user.trial_ends_at,
+        "trial_eligible": _is_trial_eligible(user),
         "subscription_cancel_at_period_end": getattr(user, "subscription_cancel_at_period_end", False),
         "subscription_current_period_end": getattr(user, "subscription_current_period_end", None),
         "limits": {

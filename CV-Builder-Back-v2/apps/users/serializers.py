@@ -65,6 +65,7 @@ class GoogleAuthSerializer(serializers.Serializer):
 
 class MeSerializer(serializers.ModelSerializer):
     effective_tier = serializers.SerializerMethodField()
+    trial_eligible = serializers.SerializerMethodField()
     limits = serializers.SerializerMethodField()
 
     class Meta:
@@ -80,6 +81,7 @@ class MeSerializer(serializers.ModelSerializer):
             "subscription_tier",
             "effective_tier",
             "trial_ends_at",
+            "trial_eligible",
             "subscription_cancel_at_period_end",
             "subscription_current_period_end",
             "pdfs_downloaded",
@@ -92,6 +94,10 @@ class MeSerializer(serializers.ModelSerializer):
 
     def get_effective_tier(self, obj):
         return obj.effective_tier() if hasattr(obj, "effective_tier") else obj.subscription_tier
+
+    def get_trial_eligible(self, obj):
+        from apps.subscriptions.services import _is_trial_eligible
+        return _is_trial_eligible(obj)
 
     def get_limits(self, obj):
         l = limits_for_user(obj)
