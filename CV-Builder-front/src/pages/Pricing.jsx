@@ -219,11 +219,14 @@ const PlanCard = ({ plan, loading, onSelect, currentTier, t }) => {
   );
 };
 
-// ─── Pro Plan Card (with Monthly/Yearly toggle) ────────────────────────────────
-const ProPlanCard = ({ plan, loading, onSelect, currentTier, t }) => {
+// ─── Pro Plan Card (with Monthly/Yearly toggle + trial states) ────────────────
+const ProPlanCard = ({
+  plan, loading, onSelect, onStartTrial, onCancelTrial,
+  currentTier, isTrialActive, trialEligible, daysLeftInTrial, t,
+}) => {
   const [isYearly, setIsYearly] = useState(false);
   const variant = isYearly ? plan.yearly : plan.monthly;
-  const isCurrentPlan = currentTier === "pro" || currentTier === "pro_monthly" || currentTier === "pro_yearly";
+  const isPaidPro = currentTier === "pro";
 
   const handleSelect = () => {
     onSelect({
@@ -232,6 +235,74 @@ const ProPlanCard = ({ plan, loading, onSelect, currentTier, t }) => {
       planName: variant.planName,
       key: variant.planName === "Pro Monthly" ? "pro_monthly" : "pro_yearly",
     });
+  };
+
+  const renderCta = () => {
+    if (isPaidPro) {
+      return (
+        <div className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] text-center bg-slate-50 text-slate-400 mb-5 border border-slate-100 cursor-default">
+          {t("pricing.currentPlan")}
+        </div>
+      );
+    }
+
+    if (isTrialActive) {
+      return (
+        <div className="mb-5 space-y-2">
+          <div className="w-full py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] text-center bg-blue-50 text-blue-700 border border-blue-200 cursor-default">
+            {t("pricing.trialActive")} — {daysLeftInTrial}d {t("pricing.trialLeft")}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSelect}
+              disabled={loading}
+              className="flex-1 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all disabled:opacity-60 active:scale-95 bg-slate-900 text-white hover:bg-blue-600 shadow-md shadow-slate-200"
+            >
+              {loading === "pay" ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("pricing.subscribePro")}
+            </button>
+            <button
+              onClick={onCancelTrial}
+              disabled={loading}
+              className="flex-1 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all disabled:opacity-60 active:scale-95 bg-white border border-red-200 text-red-500 hover:bg-red-50"
+            >
+              {loading === "cancel" ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("pricing.cancelTrial")}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (trialEligible) {
+      return (
+        <div className="mb-5 space-y-2">
+          <button
+            onClick={onStartTrial}
+            disabled={loading}
+            className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all disabled:opacity-60 active:scale-95 bg-slate-900 text-white hover:bg-blue-600 shadow-md shadow-slate-200"
+          >
+            {loading === "trial" ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("pricing.startTrial")}
+          </button>
+          <button
+            onClick={handleSelect}
+            disabled={loading}
+            className="w-full py-2 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all disabled:opacity-60 active:scale-95 bg-white border border-slate-200 text-slate-500 hover:bg-slate-50"
+          >
+            {t("pricing.skipTrialBuy")}
+          </button>
+        </div>
+      );
+    }
+
+    // Trial already used — show normal buy button
+    return (
+      <button
+        onClick={handleSelect}
+        disabled={loading}
+        className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all mb-5 disabled:opacity-60 active:scale-95 bg-slate-900 text-white hover:bg-blue-600 shadow-md shadow-slate-200"
+      >
+        {loading === "pay" ? <Loader2 size={13} className="animate-spin mx-auto" /> : variant.cta}
+      </button>
+    );
   };
 
   return (
@@ -251,19 +322,7 @@ const ProPlanCard = ({ plan, loading, onSelect, currentTier, t }) => {
 
       <p className="text-xs text-slate-500 mb-5 font-medium leading-relaxed">{variant.description}</p>
 
-      {isCurrentPlan ? (
-        <div className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] text-center bg-slate-50 text-slate-400 mb-5 border border-slate-100 cursor-default">
-          {t("pricing.currentPlan")}
-        </div>
-      ) : (
-        <button
-          onClick={handleSelect}
-          disabled={loading}
-          className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all mb-5 disabled:opacity-60 active:scale-95 bg-slate-900 text-white hover:bg-blue-600 shadow-md shadow-slate-200"
-        >
-          {loading ? <Loader2 size={13} className="animate-spin mx-auto" /> : variant.cta}
-        </button>
-      )}
+      {renderCta()}
 
       <ul className="space-y-2.5 flex-1">
         {plan.features.map((f, i) => (
@@ -286,13 +345,12 @@ const ProPlanCard = ({ plan, loading, onSelect, currentTier, t }) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 const Pricing = () => {
   const navigate = useNavigate();
-  const { user, daysLeftInTrial } = useAuth();
+  const { user, isTrialActive, trialEligible, daysLeftInTrial, refreshUser } = useAuth();
   const { t } = useLanguage();
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [showTrialBanner, setShowTrialBanner] = useState(true);
 
   const currentTier = user?.subscription_tier || "free";
-  const isTrialActive = user?.is_trial_active;
 
   const PLANS = buildPlans(t);
 
@@ -306,15 +364,47 @@ const Pricing = () => {
       navigate("/signup");
       return;
     }
-    setLoadingPlan(plan.key);
+    setLoadingPlan("pay");
     try {
-      const response = await api.post("/payments/create-session/", { plan: plan.planName });
-      if (response.data.url) {
-        window.location.href = response.data.url;
+      const response = await api.post("/api/subscriptions/create-checkout/", {
+        plan: plan.planName === "Pro Monthly" ? "pro_monthly"
+            : plan.planName === "Pro Yearly" ? "pro_yearly"
+            : plan.planName === "Professional Monthly" ? "professional_monthly"
+            : "professional_yearly",
+        gateway: "bog",
+      });
+      if (response.data.payment_url) {
+        window.location.href = response.data.payment_url;
       }
-    } catch (error) {
-      console.error("Payment failed", error);
+    } catch {
       showToast({ message: t("pricing.paymentError") });
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const handleStartTrial = async () => {
+    if (!user) { navigate("/signup"); return; }
+    setLoadingPlan("trial");
+    try {
+      await api.post("/api/subscriptions/start-trial/");
+      await refreshUser();
+      showToast({ message: t("pricing.trialStarted") });
+    } catch (err) {
+      showToast({ message: err?.response?.data?.detail || t("pricing.paymentError") });
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const handleCancelTrial = async () => {
+    setLoadingPlan("cancel");
+    try {
+      await api.post("/api/subscriptions/cancel-trial/");
+      await refreshUser();
+      showToast({ message: t("pricing.trialCanceled") });
+    } catch (err) {
+      showToast({ message: err?.response?.data?.detail || t("pricing.paymentError") });
     } finally {
       setLoadingPlan(null);
     }
@@ -325,8 +415,7 @@ const Pricing = () => {
       <NavBar />
 
       <section className="pt-32 pb-16 px-6 relative overflow-hidden">
-        {/* Decorative background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[400px] bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-blue-50/40 to-transparent -z-10" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-100 bg-[radial-gradient(circle_at_center,var(--tw-gradient-from)_0%,transparent_70%)] from-blue-50/40 to-transparent -z-10" />
 
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
@@ -354,9 +443,14 @@ const Pricing = () => {
                 <ProPlanCard
                   key={plan.key}
                   plan={plan}
-                  loading={loadingPlan === "pro_monthly" || loadingPlan === "pro_yearly"}
+                  loading={loadingPlan}
                   onSelect={handleSelect}
+                  onStartTrial={handleStartTrial}
+                  onCancelTrial={handleCancelTrial}
                   currentTier={currentTier}
+                  isTrialActive={isTrialActive}
+                  trialEligible={trialEligible}
+                  daysLeftInTrial={daysLeftInTrial}
                   t={t}
                 />
               ) : (

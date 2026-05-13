@@ -139,6 +139,7 @@ export const AuthProvider = ({ children }) => {
   const isProfessional = tier === "professional";
   const trialEndsAt = u?.trial_ends_at;
   const isTrialActive = !!trialEndsAt && new Date(trialEndsAt) > new Date();
+  const trialEligible = u?.trial_eligible ?? false;
   const isPro = tier === "pro" || tier === "professional" || isTrialActive;
 
   const getDaysLeftInTrial = () => {
@@ -167,7 +168,8 @@ export const AuthProvider = ({ children }) => {
         isPro, 
         isProfessional,
         isFree,
-        isTrialActive,  
+        isTrialActive,
+        trialEligible,
         daysLeftInTrial: getDaysLeftInTrial(),
         language: u?.preferred_language || 'en',
         limits: {
