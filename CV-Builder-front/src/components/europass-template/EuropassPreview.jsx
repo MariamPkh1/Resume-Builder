@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link2 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
 const EuropassPreview = ({ data }) => {
@@ -92,28 +93,109 @@ const EuropassPreview = ({ data }) => {
 
         <div className="space-y-10">
           {/* Main Body Sections: Summary, Experience, Education, Projects, Certs */}
-          {sections.filter(s => s.type !== 'skills' && s.type !== 'languages').map(section => (
+          {sections.filter(s => s.type !== 'skills' && s.type !== 'languages').map((section) => {
+            const kind = (section.type || "").toLowerCase();
+
+            return (
             <section key={section.id}>
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[3px] mb-6 flex items-center gap-4">
                 {getSectionTitle(section)}
                 <div className="flex-1 h-[1px] bg-slate-100"></div>
               </h3>
-              
-              {section.type === 'summary' && (
+
+              {kind === "summary" && (
                 <p className="text-[12px] text-slate-600 italic whitespace-pre-line mb-4">
                   {section.content || section.description}
                 </p>
               )}
 
+              {kind === "projects" && (
+                <div className="space-y-6">
+                  {(section.items || []).map((item, i) => {
+                    const projectUrl = String(item.link || item.url || "").trim();
+                    const href =
+                      projectUrl &&
+                      (projectUrl.startsWith("http") ? projectUrl : `https://${projectUrl}`);
+                    const dateLabel = String(item.date || "").trim();
+                    return (
+                      <div key={item.id ?? i}>
+                        <div className="flex justify-between items-center mb-1 gap-2">
+                          <h4 className="font-bold text-slate-800 text-[14px] min-w-0 flex-1">
+                            {item.name || item.title}
+                          </h4>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {dateLabel ? (
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded max-w-[11rem] text-right leading-snug">
+                                {dateLabel}
+                              </span>
+                            ) : null}
+                            {projectUrl && href ? (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="shrink-0 text-blue-600 hover:text-blue-800 p-1 -m-0.5 rounded transition-colors"
+                                aria-label={t("form.projectLink")}
+                              >
+                                <Link2 className="w-4 h-4" strokeWidth={2} />
+                              </a>
+                            ) : null}
+                          </div>
+                        </div>
+                        {item.description ? (
+                          <p className="text-[11px] text-slate-500 whitespace-pre-line">{item.description}</p>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {kind === "certificates" && (
+                <div className="space-y-6">
+                  {(section.items || []).map((item, i) => {
+                    const start = String(item.startDate || item.start || "").trim();
+                    const end = String(item.endDate || item.end || item.date || "").trim();
+                    let range = "";
+                    if (start && end) range = `${start} — ${end}`;
+                    else if (start) range = start;
+                    else if (end) range = end;
+                    return (
+                      <div key={item.id ?? i}>
+                        <div className="flex justify-between items-center mb-1 gap-2">
+                          <h4 className="font-bold text-slate-800 text-[14px] flex-1 min-w-0">
+                            {item.name || item.title}
+                          </h4>
+                          {range ? (
+                            <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded shrink-0 max-w-[11rem] text-right leading-snug">
+                              {range}
+                            </span>
+                          ) : null}
+                        </div>
+                        {(item.issuer || item.organization) ? (
+                          <p className="text-blue-600 text-[12px] font-semibold mb-2">
+                            {item.issuer || item.organization}
+                          </p>
+                        ) : null}
+                        {item.description ? (
+                          <p className="text-[11px] text-slate-500 whitespace-pre-line">{item.description}</p>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {kind !== "summary" && kind !== "projects" && kind !== "certificates" && (
               <div className="space-y-6">
                 {section.items?.map((item, i) => (
-                  <div key={i}>
-                    <div className="flex justify-between items-baseline mb-1">
+                  <div key={item.id ?? i}>
+                    <div className="flex justify-between items-baseline mb-1 gap-2">
                       <h4 className="font-bold text-slate-800 text-[14px]">
                         {item.position || item.degree || item.name || item.title}
                       </h4>
-                      <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded">
-                        {item.startDate || item.start} — {item.current ? getPresentText() : (item.endDate || item.end || item.date)}
+                      <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded shrink-0">
+                        {item.startDate || item.start} — {item.current ? getPresentText() : (item.endDate || item.end)}
                       </span>
                     </div>
                     <p className="text-blue-600 text-[12px] font-semibold mb-2">
@@ -125,8 +207,10 @@ const EuropassPreview = ({ data }) => {
                   </div>
                 ))}
               </div>
+              )}
             </section>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

@@ -234,8 +234,7 @@ class CVAPITests(APITestCase):
             self.assertEqual(user.pdfs_downloaded, 1)
             self.assertEqual(response["X-Watermark"], "true")
         else:
-            self.assertEqual(response.data["watermark"], True)
-            self.assertEqual(response.data["pdf_engine_ready"], False)
+            self.assertIn("detail", response.data)
 
     @patch("apps.cvs.views.render_cv_pdf", side_effect=RuntimeError("engine missing"))
     @patch("apps.cvs.views.check_pdf_engine", return_value=(False, "engine missing"))

@@ -18,7 +18,7 @@ const SECTION_BLUEPRINTS = {
   skills: { name: "", level: "Intermediate" },
   languages: { language: "", level: "B2" },
   projects: { name: "", link: "", date: "", description: "" },
-  certificates: { title: "", issuer: "", date: "" },
+  certificates: { name: "", issuer: "", startDate: "", endDate: "" },
   summary: { content: "" }
 };
 

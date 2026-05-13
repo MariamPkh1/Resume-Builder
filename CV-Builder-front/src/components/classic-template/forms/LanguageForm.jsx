@@ -51,23 +51,27 @@ const LanguageForm = ({ section, setResumeData, dragHandleProps, onDeleteSection
         </div>
       </div>
 
-      <div className="p-6 grid grid-cols-2 gap-3">
+      <div className="p-6 grid grid-cols-1 gap-3">
         {section.items?.map((item) => (
-          <div key={item.id} className="group relative flex gap-2 p-3 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-all">
+          <div
+            key={item.id}
+            className="group relative grid grid-cols-[minmax(0,1fr)_11rem] gap-2 p-3 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-all"
+          >
             <button
+              type="button"
               onClick={() => deleteEntry(item.id)}
-              className="absolute -top-1.5 -right-1.5 p-1 text-gray-400 hover:text-red-500 bg-white border border-gray-200 rounded-full shadow-sm transition-all opacity-0 group-hover:opacity-100"
+              className="absolute -top-1.5 -right-1.5 z-10 p-1 text-gray-400 hover:text-red-500 bg-white border border-gray-200 rounded-full shadow-sm transition-all opacity-0 group-hover:opacity-100"
             >
               <Trash2 size={10} />
             </button>
             <input
               placeholder="e.g. English"
-              className="flex-1 p-2.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-all text-sm text-gray-800 placeholder:text-gray-300 min-w-0"
+              className="min-w-0 w-full p-2.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-all text-sm text-gray-800 placeholder:text-gray-300"
               value={item.language || ""}
               onChange={(e) => updateItem(item.id, "language", e.target.value)}
             />
             <select
-              className="p-2.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-all text-xs text-gray-600 cursor-pointer"
+              className="w-full min-w-0 shrink-0 p-2.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-all text-xs text-gray-600 cursor-pointer"
               value={item.level || "Native"}
               onChange={(e) => updateItem(item.id, "level", e.target.value)}
             >

@@ -572,6 +572,7 @@ const UniversalBuilder = () => {
         <JobTailorModal
           cvId={resumeId}
           cvData={resumeData?.cv_data}
+          isPro={isPro}
           onClose={() => setShowJobTailor(false)}
           onApplyTailored={(tailoredData) => {
             if (!tailoredData?.sections) return;

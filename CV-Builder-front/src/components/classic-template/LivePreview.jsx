@@ -1,7 +1,7 @@
 import React from "react";
 import { 
   Mail, Phone, MapPin, Linkedin, Briefcase, 
-  GraduationCap, Code, FolderCode, Languages, Award, FileText 
+  GraduationCap, Code, FolderCode, Languages, Award, FileText, Link2
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -158,18 +158,24 @@ const LivePreview = ({ data, innerRef, zoom = 1 }) => {
 
               {/* PROJECTS */}
               {s.type === "projects" &&
-                s.items?.map((item, idx) => (
+                s.items?.map((item, idx) => {
+                  const projectUrl = item.link || item.url;
+                  const href =
+                    projectUrl &&
+                    (projectUrl.startsWith("http") ? projectUrl : `https://${projectUrl}`);
+                  return (
                   <div key={idx} className="mb-4">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="font-bold text-[11px]">{item.name || item.title}</span>
-                      {item.link && (
-                        <a 
-                          href={item.link.startsWith("http") ? item.link : `https://${item.link}`}
+                    <div className="flex justify-between items-center gap-3 mb-1">
+                      <span className="font-bold text-[11px] min-w-0 flex-1">{item.name || item.title}</span>
+                      {projectUrl && href && (
+                        <a
+                          href={href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[9px] text-blue-600 hover:underline"
+                          className="shrink-0 text-blue-600 hover:text-blue-800 p-1 -m-1 rounded transition-colors"
+                          aria-label={t("form.projectLink")}
                         >
-                          🔗
+                          <Link2 size={14} strokeWidth={2} />
                         </a>
                       )}
                     </div>
@@ -177,7 +183,8 @@ const LivePreview = ({ data, innerRef, zoom = 1 }) => {
                       {item.description}
                     </p>
                   </div>
-                ))}
+                  );
+                })}
 
               {/* LANGUAGES */}
               {s.type === "languages" &&
@@ -192,17 +199,27 @@ const LivePreview = ({ data, innerRef, zoom = 1 }) => {
 
               {/* CERTIFICATES */}
               {s.type === "certificates" &&
-                s.items?.map((item, idx) => (
+                s.items?.map((item, idx) => {
+                  const start = String(item.startDate || item.start || "").trim();
+                  const end = String(item.endDate || item.end || item.date || "").trim();
+                  let range = "";
+                  if (start && end) range = `${start} — ${end}`;
+                  else if (start) range = start;
+                  else if (end) range = end;
+                  return (
                   <div key={idx} className="mb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="font-bold text-[11px] text-gray-800">{item.name}</div>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-[11px] text-gray-800">{item.name || item.title}</div>
                         <div className="text-[10px] italic text-gray-600">{item.issuer}</div>
                       </div>
-                      <span className="text-[10px] text-gray-400">{item.date}</span>
+                      {range ? (
+                        <span className="text-[10px] text-gray-400 shrink-0 text-right max-w-[11rem] leading-snug">{range}</span>
+                      ) : null}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
             </div>
           ))}
         </div>

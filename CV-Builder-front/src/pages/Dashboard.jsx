@@ -19,7 +19,10 @@ const Dashboard = () => {
 
   const [resumes, setResumes] = useState([]);
   const [labels, setLabels] = useState([]);
-  const [loading, setLoading] = useState(true);
+  /** Full-screen spinner only until the first CV list load finishes (never on search/tab refetch). */
+  const [bootstrapped, setBootstrapped] = useState(false);
+  const [listFetching, setListFetching] = useState(false);
+  const hasLoadedOnceRef = useRef(false);
   const [tab, setTab] = useState("active");
   const [filterLabel, setFilterLabel] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,13 +30,13 @@ const Dashboard = () => {
   const debounceRef = useRef(null);
   const [showCreateLabel, setShowCreateLabel] = useState(false);
 
-  // Debounce search input — 200ms feels instant, avoids every-keystroke API calls
+  // Debounce search — avoids rapid API calls; 400ms keeps typing smooth without laggy refetches
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setDebouncedSearch(searchQuery.trim());
       debounceRef.current = null;
-    }, 200);
+    }, 400);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
@@ -48,7 +51,7 @@ const Dashboard = () => {
   }, []);
 
   const fetchResumes = useCallback(async () => {
-    setLoading(true);
+    if (hasLoadedOnceRef.current) setListFetching(true);
     try {
       const params = new URLSearchParams();
       params.set("archived", tab === "archived" ? "true" : "false");
@@ -60,7 +63,11 @@ const Dashboard = () => {
     } catch (err) {
       if (err.response?.status === 401) navigate("/login");
     } finally {
-      setLoading(false);
+      setListFetching(false);
+      if (!hasLoadedOnceRef.current) {
+        hasLoadedOnceRef.current = true;
+        setBootstrapped(true);
+      }
     }
   }, [tab, filterLabel, debouncedSearch, navigate]);
 
@@ -148,7 +155,7 @@ const Dashboard = () => {
   const handleTabChange = (newTab) => { setTab(newTab); setFilterLabel(null);  setResumes([]); };
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (loading) return (
+  if (!bootstrapped) return (
     <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
@@ -186,7 +193,7 @@ const Dashboard = () => {
 
       {/* Free tier banner */}
       {!isPro && !isTrialActive && (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-white/70 backdrop-blur-md border-b border-slate-100 py-2.5 px-6">
+        <div className="fixed top-11 left-0 right-0 z-40 bg-white/70 backdrop-blur-md border-b border-slate-100 py-2.5 px-6">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-3">
               <Zap size={12} className="text-blue-500" />
@@ -276,7 +283,12 @@ const Dashboard = () => {
         />
 
         {resumes.length === 0 ? (
-          <div className="bg-white border border-slate-100 rounded-3xl p-20 text-center">
+          <div className="relative bg-white border border-slate-100 rounded-3xl p-20 text-center">
+            {listFetching && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-white/70 backdrop-blur-[1px]">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" aria-hidden />
+              </div>
+            )}
             {tab === "archived" ? (
               debouncedSearch ? (
                 <>
@@ -315,7 +327,15 @@ const Dashboard = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {listFetching && (
+              <div className="absolute inset-0 z-10 flex items-start justify-center pt-24 rounded-3xl bg-white/50 backdrop-blur-[1px]">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm">
+                  <Loader2 className="w-4 h-4 text-blue-500 animate-spin shrink-0" aria-hidden />
+                  <span className="text-[11px] font-semibold text-slate-600">{t("dashboard.searching")}</span>
+                </div>
+              </div>
+            )}
             {resumes.map((resume) => (
               <CVCard
                 key={resume.id}

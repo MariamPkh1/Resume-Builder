@@ -34,9 +34,7 @@ const IMPROVABLE = {
   summary:      "Professional Summary",
   experience:   "Work Experience",
   education:    "Education",
-  skills:       "Skills",
   projects:     "Projects",
-  certificates: "Certificates",
 };
 
 // Pull plain text from a section regardless of its shape
@@ -84,7 +82,7 @@ const getContent = (section) => {
             return [
               item.name,
               item.issuer,
-              item.date,
+              [item.startDate || item.start, item.endDate || item.end || item.date].filter(Boolean).join(" – "),
               item.description,
             ].filter(Boolean).join("\n");
 

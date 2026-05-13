@@ -321,8 +321,8 @@
           <div class="sidebar-section-title">{{ section.title|default:"Languages" }}</div>
           {% for item in section.items %}
           <div class="sidebar-lang-item">
-            <span class="sidebar-lang-name">{{ item.name|default:"" }}</span>
-            <span class="sidebar-lang-level">{{ item.level|default:"" }}</span>
+            <span class="sidebar-lang-name">{% if item.language %}{{ item.language }}{% elif item.name %}{{ item.name }}{% endif %}</span>
+            <span class="sidebar-lang-level">{% if item.level %}{{ item.level }}{% elif item.proficiency %}{{ item.proficiency }}{% endif %}</span>
           </div>
           {% endfor %}
         </div>
@@ -359,8 +359,9 @@
               </div>
               <div class="item-header-right">
                 <div class="item-date">
-                  {{ item.startDate|default:"" }}{% if item.startDate %} — {% endif %}
-                  {% if item.current %}Present{% else %}{{ item.endDate|default:"" }}{% endif %}
+                  {% if item.startDate %}{{ item.startDate }}{% elif item.start %}{{ item.start }}{% endif %}
+                  {% if item.startDate or item.start %}{% if item.current or item.endDate or item.end %} — {% endif %}{% endif %}
+                  {% if item.current %}{{ pdf_currently_working|default:"Present" }}{% else %}{% if item.endDate %}{{ item.endDate }}{% elif item.end %}{{ item.end }}{% endif %}{% endif %}
                 </div>
               </div>
             </div>
@@ -383,7 +384,9 @@
               </div>
               <div class="item-header-right">
                 <div class="item-date">
-                  {{ item.startDate|default:"" }}{% if item.startDate %} — {% endif %}{{ item.endDate|default:"" }}
+                  {% if item.startDate %}{{ item.startDate }}{% elif item.start %}{{ item.start }}{% endif %}
+                  {% if item.startDate or item.start %}{% if item.endDate or item.end %} — {% endif %}{% endif %}
+                  {% if item.endDate %}{{ item.endDate }}{% elif item.end %}{{ item.end }}{% endif %}
                 </div>
               </div>
             </div>
@@ -402,9 +405,9 @@
               <div class="item-header-left">
                 <div class="item-title">{{ item.name|default:"" }}</div>
               </div>
-              {% if item.url %}
+              {% if item.link or item.url %}
               <div class="item-header-right">
-                <div class="item-date">{{ item.url }}</div>
+                <div class="item-date">{% if item.link %}{{ item.link }}{% else %}{{ item.url }}{% endif %}</div>
               </div>
               {% endif %}
             </div>
@@ -419,8 +422,21 @@
           <div class="section-title">{{ section.title|default:"Certificates" }}</div>
           {% for item in section.items %}
           <div class="cert-item">
-            <div class="item-title">{{ item.name|default:"" }}</div>
-            <div class="cert-issuer">{{ item.issuer|default:"" }} {% if item.date %}· {{ item.date }}{% endif %}</div>
+            <div class="item-header">
+              <div class="item-header-left">
+                <div class="item-title">{% if item.name %}{{ item.name }}{% elif item.title %}{{ item.title }}{% endif %}</div>
+                {% if item.issuer %}<div class="cert-issuer">{{ item.issuer }}</div>{% endif %}
+              </div>
+              {% if item.startDate or item.start or item.endDate or item.end or item.date %}
+              <div class="item-header-right">
+                <div class="item-date">
+                  {% if item.startDate %}{{ item.startDate }}{% elif item.start %}{{ item.start }}{% endif %}
+                  {% if item.startDate or item.start %}{% if item.endDate or item.end or item.date %} — {% endif %}{% endif %}
+                  {% if item.endDate %}{{ item.endDate }}{% elif item.end %}{{ item.end }}{% elif item.date %}{{ item.date }}{% endif %}
+                </div>
+              </div>
+              {% endif %}
+            </div>
           </div>
           {% endfor %}
         </div>

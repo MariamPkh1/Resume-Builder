@@ -72,6 +72,14 @@ def _file_to_data_url(path: Path):
     return f"data:{mime};base64,{b64}"
 
 
+def _pdf_date_labels(language_code):
+    """Short 'Present' vs long 'Currently working here' (matches frontend previews)."""
+    lang = (language_code or "en").lower()
+    if lang.startswith("ka"):
+        return "დღემდე", "ახლა აქ ვმუშაობ"
+    return "Present", "Currently working here"
+
+
 def render_cv_pdf(*, cv, watermark=False, template="classic"):
     from weasyprint import HTML
 
@@ -79,7 +87,13 @@ def render_cv_pdf(*, cv, watermark=False, template="classic"):
     is_europass = template in europass_templates
     template_name = "cvs/pdf_europass.html" if is_europass else "cvs/pdf.html"
 
-    context = {"cv": cv, "watermark": watermark}
+    present_short, present_long = _pdf_date_labels(getattr(cv, "language", None))
+    context = {
+        "cv": cv,
+        "watermark": watermark,
+        "pdf_present": present_short,
+        "pdf_currently_working": present_long,
+    }
 
     # Photo is only used in europass-family templates.
     if is_europass:

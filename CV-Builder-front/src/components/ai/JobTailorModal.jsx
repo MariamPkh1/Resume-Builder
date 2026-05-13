@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, Loader2, Check, ChevronRight, RotateCcw, Target } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { tailorForJobAPI } from "../../services/aiService";
 
@@ -93,6 +94,7 @@ const mapTailorResultToUI = (data, cvData) => {
  *   cvData           — current cv_data (for building tailored result and Apply)
  *   onClose          — () => void
  *   onApplyTailored  — (tailoredCvData: object) => void
+ *   isPro            — Job Tailoring is Pro-only; free users see an upgrade explainer
  */
 
 // ─── Match score badge ────────────────────────────────────────────────────────
@@ -186,8 +188,9 @@ const inputClass =
 const STEP_INPUT   = "input";
 const STEP_RESULTS = "results";
 
-const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored }) => {
+const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored, isPro = true }) => {
   const { t: trans, language } = useLanguage();
+  const navigate = useNavigate();
   const [step,           setStep]           = useState(STEP_INPUT);
   const [jobTitle,       setJobTitle]       = useState("");
   const [company,        setCompany]        = useState("");
@@ -195,11 +198,13 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored }) => {
   const [loading,        setLoading]        = useState(false);
   const [result,         setResult]         = useState(null);
   const [error,          setError]          = useState(null);
+  const [upgradeNotice,  setUpgradeNotice]  = useState(null);
 
   const handleTailor = async () => {
     if (!jobDescription.trim()) return;
     setLoading(true);
     setError(null);
+    setUpgradeNotice(null);
 
     const { data, error: err } = await tailorForJobAPI({
       cvId,
@@ -212,7 +217,11 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored }) => {
     setLoading(false);
 
     if (err) {
-      setError(err.detail ?? err.error ?? trans("tailor.failed"));
+      if (err.upgrade_required) {
+        setUpgradeNotice(trans("tailor.blockedOnPlan"));
+      } else {
+        setError(err.detail ?? err.error ?? trans("tailor.failed"));
+      }
       return;
     }
 
@@ -232,7 +241,71 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored }) => {
     setStep(STEP_INPUT);
     setResult(null);
     setError(null);
+    setUpgradeNotice(null);
   };
+
+  if (!isPro) {
+    return (
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+        style={{ backdropFilter: "blur(4px)" }}
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-3xl w-full max-w-lg shadow-2xl flex flex-col"
+          style={{ maxHeight: "90vh" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl">
+                <Target className="w-5 h-5 text-blue-600" />
+              </div>
+              <p className="text-base font-black text-gray-900">{trans("tailor.title")}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-xl text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-all"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 py-10 flex flex-col items-center justify-center min-h-[260px]">
+            <div className="w-14 h-14 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center mb-5">
+              <Target className="w-7 h-7 text-sky-600" />
+            </div>
+            <p className="text-base font-black text-gray-900 text-center mb-2 px-2">
+              {trans("tailor.proOnlyTitle")}
+            </p>
+            <p className="text-sm text-gray-500 text-center leading-relaxed max-w-md">
+              {trans("tailor.proOnlyDescription")}
+            </p>
+          </div>
+
+          <div className="px-6 py-4 border-t border-gray-100 shrink-0 space-y-2">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate("/pricing");
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-700 active:scale-[0.98] transition-all"
+            >
+              {trans("tailor.upgradeCta")}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-2.5 text-sm text-gray-400 hover:text-gray-600 transition-colors font-medium"
+            >
+              {trans("ats.maybeLater")}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const t = result; // shorthand
 
@@ -307,7 +380,23 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored }) => {
                 />
               </Field>
 
-              {error && (
+              {upgradeNotice && (
+                <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl space-y-3">
+                  <p className="text-sm text-amber-950 leading-relaxed">{upgradeNotice}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      navigate("/pricing");
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-amber-900 text-white text-xs font-bold hover:bg-amber-800 transition-colors"
+                  >
+                    {trans("tailor.upgradeCta")}
+                  </button>
+                </div>
+              )}
+
+              {error && !upgradeNotice && (
                 <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-600">
                   {error}
                 </div>
@@ -418,7 +507,7 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored }) => {
             </div>
           )}
           <p className="text-[10px] text-gray-300 text-center">
-            Uses 1 of your 50 monthly tailorings · Changes only apply when you click Apply
+            {trans("tailor.footerUsageNote")}
           </p>
         </div>
       </div>

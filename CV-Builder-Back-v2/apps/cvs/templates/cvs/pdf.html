@@ -20,23 +20,28 @@
     .content { position: relative; z-index: 1; }
 
     /* Header */
-    .header { border-bottom: 2px solid #2563eb; padding-bottom: 14px; margin-bottom: 20px; }
-    .header h1 { font-size: 26px; font-weight: 700; color: #1e293b; }
-    .header .job-title { font-size: 14px; color: #2563eb; margin-top: 2px; }
-    .header .contact { font-size: 11px; color: #555; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 12px; }
+    .header { text-align: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 14px; margin-bottom: 20px; }
+    .header h1 { font-size: 26px; font-weight: 700; color: #111827; }
+    .header .job-title { font-size: 14px; color: #4b5563; margin-top: 2px; }
+    .header .contact { font-size: 11px; color: #555; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
 
     /* Sections */
     .section { margin-bottom: 18px; }
     .section-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: #2563eb;
-      border-bottom: 1px solid #e2e8f0;
+      color: #1f2937;
+      border-bottom: 1px solid #f3f4f6;
       padding-bottom: 4px;
       margin-bottom: 10px;
     }
+    .pdf-section-icon { flex-shrink: 0; color: #1f2937; line-height: 0; }
+    .pdf-section-icon svg { display: block; }
 
     /* Summary */
     .summary-text { font-size: 12px; color: #444; line-height: 1.6; }
@@ -52,9 +57,9 @@
     /* Skills */
     .skills-list { display: flex; flex-wrap: wrap; gap: 6px; }
     .skill-tag {
-      background: #eff6ff;
-      color: #2563eb;
-      border: 1px solid #bfdbfe;
+      background: #f9fafb;
+      color: #374151;
+      border: 1px solid #f3f4f6;
       border-radius: 4px;
       padding: 2px 8px;
       font-size: 11px;
@@ -100,7 +105,7 @@
       <!-- SUMMARY -->
       {% if section.type == "summary" %}
       <div class="section">
-        <div class="section-title">{{ section.title|default:"Summary" }}</div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="summary" %}<span>{{ section.title|default:"Summary" }}</span></div>
         <div class="summary-text">{{ section.content|default:""|linebreaksbr }}</div>
       </div>
       {% endif %}
@@ -108,14 +113,15 @@
       <!-- EXPERIENCE -->
       {% if section.type == "experience" %}
       <div class="section">
-        <div class="section-title">{{ section.title|default:"Experience" }}</div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="experience" %}<span>{{ section.title|default:"Experience" }}</span></div>
         {% for item in section.items %}
         <div class="item">
           <div class="item-header">
-            <div class="item-title">{{ item.position|default:item.title|default:"" }}</div>
+            <div class="item-title">{% if item.position %}{{ item.position }}{% elif item.title %}{{ item.title }}{% endif %}</div>
             <div class="item-date">
-              {{ item.startDate|default:"" }}{% if item.startDate %} – {% endif %}
-              {% if item.current %}Present{% else %}{{ item.endDate|default:"" }}{% endif %}
+              {% if item.startDate %}{{ item.startDate }}{% elif item.start %}{{ item.start }}{% endif %}
+              {% if item.startDate or item.start %}{% if item.current or item.endDate or item.end %} – {% endif %}{% endif %}
+              {% if item.current %}{{ pdf_present|default:"Present" }}{% else %}{% if item.endDate %}{{ item.endDate }}{% elif item.end %}{{ item.end }}{% endif %}{% endif %}
             </div>
           </div>
           <div class="item-subtitle">{{ item.company|default:"" }}{% if item.location %} · {{ item.location }}{% endif %}</div>
@@ -128,13 +134,15 @@
       <!-- EDUCATION -->
       {% if section.type == "education" %}
       <div class="section">
-        <div class="section-title">{{ section.title|default:"Education" }}</div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="education" %}<span>{{ section.title|default:"Education" }}</span></div>
         {% for item in section.items %}
         <div class="item">
           <div class="item-header">
            <div class="item-title">{{ item.school|default:"" }}</div>
             <div class="item-date">
-              {{ item.startDate|default:"" }}{% if item.startDate %} – {% endif %}{{ item.endDate|default:"" }}
+              {% if item.startDate %}{{ item.startDate }}{% elif item.start %}{{ item.start }}{% endif %}
+              {% if item.startDate or item.start %}{% if item.endDate or item.end %} – {% endif %}{% endif %}
+              {% if item.endDate %}{{ item.endDate }}{% elif item.end %}{{ item.end }}{% endif %}
             </div>
           </div>
           <div class="item-subtitle">{{ item.degree|default:"" }}{% if item.field %} in {{ item.field }}{% endif %}</div>
@@ -147,7 +155,7 @@
       <!-- SKILLS -->
       {% if section.type == "skills" %}
       <div class="section">
-        <div class="section-title">{{ section.title|default:"Skills" }}</div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="skills" %}<span>{{ section.title|default:"Skills" }}</span></div>
         <div class="skills-list">
           {% for item in section.items %}
             {% with name=item.name|default:item %}
@@ -161,12 +169,12 @@
       <!-- PROJECTS -->
       {% if section.type == "projects" %}
       <div class="section">
-        <div class="section-title">{{ section.title|default:"Projects" }}</div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="projects" %}<span>{{ section.title|default:"Projects" }}</span></div>
         {% for item in section.items %}
         <div class="item">
           <div class="item-header">
-            <div class="item-title">{{ item.name|default:item.title|default:"" }}</div>
-            {% if item.url %}<div class="item-date">{{ item.url }}</div>{% endif %}
+            <div class="item-title">{% if item.name %}{{ item.name }}{% elif item.title %}{{ item.title }}{% endif %}</div>
+            {% if item.link or item.url %}<div class="item-date">{% if item.link %}{{ item.link }}{% else %}{{ item.url }}{% endif %}</div>{% endif %}
           </div>
           {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
         </div>
@@ -177,11 +185,11 @@
       <!-- LANGUAGES -->
       {% if section.type == "languages" %}
       <div class="section">
-        <div class="section-title">{{ section.title|default:"Languages" }}</div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="languages" %}<span>{{ section.title|default:"Languages" }}</span></div>
         {% for item in section.items %}
         <div class="lang-item">
-          <span>{{ item.name|default:"" }}</span>
-          <span class="lang-level">{{ item.level|default:"" }}</span>
+          <span>{% if item.language %}{{ item.language }}{% elif item.name %}{{ item.name }}{% endif %}</span>
+          <span class="lang-level">{% if item.level %}{{ item.level }}{% elif item.proficiency %}{{ item.proficiency }}{% endif %}</span>
         </div>
         {% endfor %}
       </div>
@@ -190,11 +198,22 @@
       <!-- CERTIFICATES -->
       {% if section.type == "certificates" %}
       <div class="section">
-        <div class="section-title">{{ section.title|default:"Certificates" }}</div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="certificates" %}<span>{{ section.title|default:"Certificates" }}</span></div>
         {% for item in section.items %}
         <div class="cert-item">
-          <div class="item-title">{{ item.name|default:item.title|default:"" }}</div>
-          <div class="cert-issuer">{{ item.issuer|default:"" }} {% if item.date %}· {{ item.date }}{% endif %}</div>
+          <div class="item-header">
+            <div>
+              <div class="item-title">{% if item.name %}{{ item.name }}{% elif item.title %}{{ item.title }}{% endif %}</div>
+              {% if item.issuer %}<div class="cert-issuer">{{ item.issuer }}</div>{% endif %}
+            </div>
+            {% if item.startDate or item.start or item.endDate or item.end or item.date %}
+            <div class="item-date">
+              {% if item.startDate %}{{ item.startDate }}{% elif item.start %}{{ item.start }}{% endif %}
+              {% if item.startDate or item.start %}{% if item.endDate or item.end or item.date %} – {% endif %}{% endif %}
+              {% if item.endDate %}{{ item.endDate }}{% elif item.end %}{{ item.end }}{% elif item.date %}{{ item.date }}{% endif %}
+            </div>
+            {% endif %}
+          </div>
         </div>
         {% endfor %}
       </div>
