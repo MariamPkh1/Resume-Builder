@@ -39,7 +39,7 @@ class AuthAPITests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
         return str(refresh)
 
-    def test_register_creates_inactive_trial_user_and_sends_verification_code(self):
+    def test_register_creates_free_user_and_sends_verification_code(self):
         response = self.client.post("/api/auth/register/", self.register_payload(), format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -47,8 +47,8 @@ class AuthAPITests(APITestCase):
         self.assertTrue(user.is_active)
         self.assertFalse(user.email_verified)
         self.assertEqual(user.subscription_tier, "free")
-        self.assertEqual(user.effective_tier(), "pro")
-        self.assertIsNotNone(user.trial_ends_at)
+        self.assertEqual(user.effective_tier(), "free")
+        self.assertIsNone(user.trial_ends_at)
         self.assertEqual(len(mail.outbox), 1)
 
         code_row = UserActionCode.objects.get(
@@ -56,7 +56,7 @@ class AuthAPITests(APITestCase):
             purpose=UserActionCode.Purpose.VERIFY_EMAIL,
         )
         self.assertEqual(response.data["user"]["email"], user.email)
-        self.assertEqual(response.data["user"]["effective_tier"], "pro")
+        self.assertEqual(response.data["user"]["effective_tier"], "free")
         self.assertIn("tokens", response.data)
         self.assertIn("access", response.data["tokens"])
         self.assertIn("refresh", response.data["tokens"])

@@ -1,4 +1,4 @@
-from io import StringIO
+from io import BytesIO, StringIO
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -6,6 +6,8 @@ from django.core.management import call_command
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.cvs.models import CV
 from apps.cv_versions.models import CVVersion
@@ -266,3 +268,153 @@ class CVAPITests(APITestCase):
         with self.assertRaisesMessage(Exception, "PDF engine unavailable: missing cairo"):
             call_command("check_pdf_engine")
         self.assertTrue(mock_check.called)
+
+
+class PhotoUploadTests(APITestCase):
+
+    # ── Helpers ───────────────────────────────────────────────────────────────
+
+    def create_user(self, email="user@example.com", **kwargs):
+        return User.objects.create_user(
+            email=email,
+            password="StrongPass123",
+            full_name="Test User",
+            is_active=True,
+            email_verified=True,
+            **kwargs,
+        )
+
+    def authenticate(self, user):
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+    def create_cv(self, user):
+        return CV.objects.create(
+            user=user,
+            title="My CV",
+            cv_data={},
+            section_order=[],
+            language="en",
+            template="classic",
+        )
+
+    def make_image(self, name="photo.jpg", content_type="image/jpeg", size=1024):
+        return SimpleUploadedFile(name, b"\xff\xd8\xff" + b"0" * size, content_type=content_type)
+
+    # ── Authentication ────────────────────────────────────────────────────────
+
+    def test_upload_photo_requires_authentication(self):
+        user = self.create_user()
+        cv = self.create_cv(user)
+
+        response = self.client.post(
+            f"/api/cvs/{cv.id}/upload-photo/",
+            {"photo": self.make_image()},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # ── Validation ────────────────────────────────────────────────────────────
+
+    def test_upload_photo_without_file_returns_400(self):
+        user = self.create_user()
+        cv = self.create_cv(user)
+        self.authenticate(user)
+
+        response = self.client.post(f"/api/cvs/{cv.id}/upload-photo/", {}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("detail", response.data)
+
+    def test_upload_non_image_file_returns_400(self):
+        user = self.create_user()
+        cv = self.create_cv(user)
+        self.authenticate(user)
+        pdf = SimpleUploadedFile("resume.pdf", b"%PDF-1.4 content", content_type="application/pdf")
+
+        response = self.client.post(
+            f"/api/cvs/{cv.id}/upload-photo/", {"photo": pdf}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("detail", response.data)
+
+    def test_upload_oversized_image_returns_400(self):
+        user = self.create_user()
+        cv = self.create_cv(user)
+        self.authenticate(user)
+        big_file = SimpleUploadedFile(
+            "big.jpg", b"\xff\xd8\xff" + b"0" * (5 * 1024 * 1024 + 1), content_type="image/jpeg"
+        )
+
+        response = self.client.post(
+            f"/api/cvs/{cv.id}/upload-photo/", {"photo": big_file}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("detail", response.data)
+
+    # ── Success ───────────────────────────────────────────────────────────────
+
+    def test_upload_valid_image_returns_url(self):
+        user = self.create_user()
+        cv = self.create_cv(user)
+        self.authenticate(user)
+
+        response = self.client.post(
+            f"/api/cvs/{cv.id}/upload-photo/",
+            {"photo": self.make_image()},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("url", response.data)
+        self.assertIn(f"cv_photos/{cv.id}/photo", response.data["url"])
+
+    def test_upload_png_preserves_extension(self):
+        user = self.create_user()
+        cv = self.create_cv(user)
+        self.authenticate(user)
+        png = SimpleUploadedFile("avatar.png", b"\x89PNG\r\n" + b"0" * 512, content_type="image/png")
+
+        response = self.client.post(
+            f"/api/cvs/{cv.id}/upload-photo/", {"photo": png}, format="multipart"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["url"].endswith(".png"))
+
+    def test_second_upload_replaces_first(self):
+        user = self.create_user()
+        cv = self.create_cv(user)
+        self.authenticate(user)
+
+        self.client.post(
+            f"/api/cvs/{cv.id}/upload-photo/",
+            {"photo": self.make_image("first.jpg")},
+            format="multipart",
+        )
+        response = self.client.post(
+            f"/api/cvs/{cv.id}/upload-photo/",
+            {"photo": self.make_image("second.jpg")},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    # ── Ownership ─────────────────────────────────────────────────────────────
+
+    def test_cannot_upload_photo_to_another_users_cv(self):
+        owner = self.create_user(email="owner@example.com")
+        other = self.create_user(email="other@example.com")
+        cv = self.create_cv(owner)
+        self.authenticate(other)
+
+        response = self.client.post(
+            f"/api/cvs/{cv.id}/upload-photo/",
+            {"photo": self.make_image()},
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

@@ -333,3 +333,198 @@ class AIAPITests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data["quota"]["limit"], 0)
+
+
+class ImproveSectionQuotaTests(APITestCase):
+
+    # ── Helpers ───────────────────────────────────────────────────────────────
+
+    def create_user(self, email="user@example.com", tier="free", **kwargs):
+        return User.objects.create_user(
+            email=email,
+            password="StrongPass123",
+            full_name="Test User",
+            is_active=True,
+            email_verified=True,
+            subscription_tier=tier,
+            **kwargs,
+        )
+
+    def authenticate(self, user):
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+    def create_cv(self, user):
+        return CV.objects.create(
+            user=user,
+            title="My CV",
+            cv_data={},
+            section_order=[],
+            language="en",
+            template="classic",
+        )
+
+    def exhaust_free_quota(self, user, count=10):
+        for _ in range(count):
+            AIUsage.objects.create(
+                user=user,
+                feature=AIUsage.Feature.IMPROVE_SECTION,
+                success=True,
+            )
+
+    def improve_payload(self, cv):
+        return {
+            "cv_id": str(cv.id),
+            "section_name": "summary",
+            "section_content": "I am a developer.",
+            "language": "en",
+        }
+
+    # ── Free tier ─────────────────────────────────────────────────────────────
+
+    def test_free_user_is_blocked_after_10_uses(self):
+        user = self.create_user()
+        cv = self.create_cv(user)
+        self.exhaust_free_quota(user, 10)
+        self.authenticate(user)
+
+        response = self.client.post("/api/ai/improve-section/", self.improve_payload(cv), format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["quota"]["limit"], 10)
+        self.assertEqual(response.data["quota"]["used"], 10)
+        self.assertEqual(response.data["quota"]["window"], "lifetime")
+
+    def test_free_user_is_allowed_on_9th_use(self):
+        user = self.create_user()
+        cv = self.create_cv(user)
+        self.exhaust_free_quota(user, 9)
+        self.authenticate(user)
+
+        with patch("apps.ai.views.improve_section_with_openai") as mock_improve:
+            mock_improve.return_value = {
+                "result": {"improved_text": "Better", "alternative_versions": [], "tips": []},
+                "meta": {"model_name": "test", "prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+            }
+            response = self.client.post(
+                "/api/ai/improve-section/", self.improve_payload(cv), format="json"
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_quota_denied_usage_row_is_created_for_free_user(self):
+        user = self.create_user()
+        cv = self.create_cv(user)
+        self.exhaust_free_quota(user, 10)
+        self.authenticate(user)
+
+        self.client.post("/api/ai/improve-section/", self.improve_payload(cv), format="json")
+
+        denied = AIUsage.objects.filter(
+            user=user,
+            feature=AIUsage.Feature.IMPROVE_SECTION,
+            success=False,
+        ).latest("created_at")
+        self.assertTrue(denied.request_payload["quota_denied"])
+
+    # ── Pro tier — unlimited ──────────────────────────────────────────────────
+
+    def test_pro_user_is_never_blocked_by_improve_section_quota(self):
+        user = self.create_user(tier="pro")
+        cv = self.create_cv(user)
+        self.exhaust_free_quota(user, 50)
+        self.authenticate(user)
+
+        with patch("apps.ai.views.improve_section_with_openai") as mock_improve:
+            mock_improve.return_value = {
+                "result": {"improved_text": "Better", "alternative_versions": [], "tips": []},
+                "meta": {"model_name": "test", "prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+            }
+            response = self.client.post(
+                "/api/ai/improve-section/", self.improve_payload(cv), format="json"
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["quota"]["window"], "monthly_unlimited")
+
+    # ── Professional tier — unlimited ─────────────────────────────────────────
+
+    def test_professional_user_is_never_blocked(self):
+        user = self.create_user(tier="professional")
+        cv = self.create_cv(user)
+        self.exhaust_free_quota(user, 100)
+        self.authenticate(user)
+
+        with patch("apps.ai.views.improve_section_with_openai") as mock_improve:
+            mock_improve.return_value = {
+                "result": {"improved_text": "Better", "alternative_versions": [], "tips": []},
+                "meta": {"model_name": "test", "prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+            }
+            response = self.client.post(
+                "/api/ai/improve-section/", self.improve_payload(cv), format="json"
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["quota"]["window"], "unlimited")
+
+    # ── Trial user — behaves like pro ─────────────────────────────────────────
+
+    def test_trial_user_is_never_blocked_by_improve_section_quota(self):
+        from django.utils import timezone
+        user = self.create_user(
+            tier="free",
+            trial_ends_at=timezone.now() + timezone.timedelta(days=5),
+        )
+        cv = self.create_cv(user)
+        self.exhaust_free_quota(user, 20)
+        self.authenticate(user)
+
+        with patch("apps.ai.views.improve_section_with_openai") as mock_improve:
+            mock_improve.return_value = {
+                "result": {"improved_text": "Better", "alternative_versions": [], "tips": []},
+                "meta": {"model_name": "test", "prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+            }
+            response = self.client.post(
+                "/api/ai/improve-section/", self.improve_payload(cv), format="json"
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    # ── Missing required fields ───────────────────────────────────────────────
+
+    def test_improve_section_without_cv_id_returns_400(self):
+        user = self.create_user()
+        self.authenticate(user)
+
+        response = self.client.post(
+            "/api/ai/improve-section/",
+            {"section_name": "summary", "section_content": "text"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_improve_section_with_nonexistent_cv_returns_404(self):
+        user = self.create_user()
+        self.authenticate(user)
+
+        response = self.client.post(
+            "/api/ai/improve-section/",
+            {
+                "cv_id": "00000000-0000-0000-0000-000000000000",
+                "section_name": "summary",
+                "section_content": "text",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_improve_section_requires_authentication(self):
+        response = self.client.post(
+            "/api/ai/improve-section/",
+            {"cv_id": "00000000-0000-0000-0000-000000000000", "section_name": "summary", "section_content": "x"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
