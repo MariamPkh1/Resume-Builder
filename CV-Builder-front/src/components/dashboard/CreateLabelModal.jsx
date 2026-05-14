@@ -16,8 +16,9 @@ const CreateLabelModal = ({ onClose, onCreate }) => {
       const res = await api.post("/api/labels/", { name: name.trim(), color });
       onCreate(res.data);
       onClose();
-    } catch {
-      showToast({ message: "Failed to create label." });
+    } catch (err) {
+      const nameError = err?.response?.data?.name?.[0];
+      showToast({ message: nameError ?? "Failed to create label." });
     } finally {
       setLoading(false);
     }
