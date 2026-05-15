@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
+    "storages",
     "apps.users",
     "apps.cvs",
     "apps.labels",
@@ -198,8 +199,27 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "staticfiles"))
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.getenv("MEDIA_ROOT", str(BASE_DIR / "media"))
+USE_S3 = env_bool("USE_S3", False)
+
+if USE_S3:
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "")
+    AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "auto")
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+    # For Cloudflare R2: https://<account_id>.r2.cloudflarestorage.com
+    # Leave empty for standard AWS S3
+    AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL", "") or None
+    AWS_S3_FILE_OVERWRITE = True
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    MEDIA_URL = os.getenv("MEDIA_URL", f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/")
+    MEDIA_ROOT = ""
+    if not AWS_STORAGE_BUCKET_NAME and not DEBUG:
+        raise ImproperlyConfigured("AWS_STORAGE_BUCKET_NAME must be set when USE_S3 is enabled.")
+else:
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = os.getenv("MEDIA_ROOT", str(BASE_DIR / "media"))
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

@@ -32,6 +32,9 @@ urlpatterns = [
     path("api/", include("apps.users.urls")),
     path("api/", include("apps.subscriptions.urls")),
 
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+if not settings.USE_S3:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
