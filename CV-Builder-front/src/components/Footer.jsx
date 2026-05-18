@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import logo3 from "../assets/logo3.svg";
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -72,7 +73,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="footer-brand" style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             <img
-              src="/src/assets/logo3.svg"
+              src={logo3}
               alt="logo"
               style={{
                 height: 52,
