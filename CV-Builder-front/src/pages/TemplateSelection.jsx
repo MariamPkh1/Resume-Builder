@@ -6,11 +6,12 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import NavBar from "../components/NavBar";
 import { showToast } from "../utils/toast";
+import classicPreview from "../assets/preview-classic.png";
+import modernPreview from "../assets/europass-preview.png";
 
-// ── DROP YOUR TEMPLATE SCREENSHOT PATHS HERE ─────────────────────────────────
 const TEMPLATE_PREVIEWS = {
-  classic: "/src/assets/preview-classic.png",
-  modern: "/src/assets/europass-preview.png",
+  classic: classicPreview,
+  modern: modernPreview,
 };
 
 const templates = [
