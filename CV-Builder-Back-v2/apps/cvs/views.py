@@ -206,7 +206,11 @@ class CVViewSet(viewsets.ModelViewSet):
             default_storage.delete(dest)
 
         default_storage.save(dest, ContentFile(photo.read()))
-        url = request.build_absolute_uri(settings.MEDIA_URL + dest)
+        media_url = settings.MEDIA_URL
+        if str(media_url).startswith(("http://", "https://")):
+            url = f"{str(media_url).rstrip('/')}/{dest}"
+        else:
+            url = request.build_absolute_uri(f"{str(media_url).rstrip('/')}/{dest}")
 
         return Response({"url": url}, status=status.HTTP_200_OK)
 

@@ -190,16 +190,42 @@ const UniversalBuilder = () => {
   }, [debouncedSave, resumeId, template]);
 
   // ── 6. PHOTO UPLOAD ──
+  const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("Failed to read image"));
+      };
+      reader.onerror = () => reject(reader.error ?? new Error("Failed to read image"));
+      reader.readAsDataURL(file);
+    });
+
   const handlePhotoUpload = async (file) => {
     const formData = new FormData();
     formData.append("photo", file);
     setSaveStatus("saving");
     try {
-      const { data } = await api.post(`/api/cvs/${resumeId}/upload-photo/`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const dataUrl = await readFileAsDataUrl(file);
+
+      setResumeData((prev) => {
+        const updated = {
+          ...prev,
+          cv_data: {
+            ...prev.cv_data,
+            personal_info: {
+              ...(prev.cv_data?.personal_info || {}),
+              photo: dataUrl,
+            },
+          },
+        };
+        setSaveStatus("editing");
+        debouncedSave(updated, resumeId, template);
+        return updated;
       });
-      updateCvData({
-        personal_info: { ...resumeData.cv_data.personal_info, photo: data.url },
+
+      await api.post(`/api/cvs/${resumeId}/upload-photo/`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       setSaveStatus("saved");
     } catch {
