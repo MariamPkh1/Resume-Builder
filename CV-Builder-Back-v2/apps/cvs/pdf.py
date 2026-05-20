@@ -77,23 +77,24 @@ def _pdf_date_labels(language_code):
     lang = (language_code or "en").lower()
     if lang.startswith("ka"):
         return "დღემდე", "ახლა აქ ვმუშაობ"
-    return "Present", "Currently working here"
+    return "Present", "Present"
 
 
-def render_cv_pdf(*, cv, watermark=False, template="classic"):
+def render_cv_pdf(*, cv, watermark=False, template="classic", language=None):
     from weasyprint import HTML
 
     europass_templates = ["europass", "modern"]
     is_europass = template in europass_templates
     template_name = "cvs/pdf_europass.html" if is_europass else "cvs/pdf.html"
 
-    present_short, present_long = _pdf_date_labels(getattr(cv, "language", None))
+    present_short, present_long = _pdf_date_labels(language or getattr(cv, "language", None))
     context = {
         "cv": cv,
         "watermark": watermark,
         "pdf_present": present_short,
         "pdf_currently_working": present_long,
     }
+    context["pdf_language"] = (language or getattr(cv, "language", None) or "en").lower()
 
     # Photo is only used in europass-family templates.
     if is_europass:

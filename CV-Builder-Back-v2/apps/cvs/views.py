@@ -223,7 +223,8 @@ class CVViewSet(viewsets.ModelViewSet):
 
         try:
             template = request.query_params.get("template") or cv.template or "classic"
-            pdf_bytes = render_cv_pdf(cv=cv, watermark=is_free, template=template)
+            language = request.query_params.get("language") or cv.language
+            pdf_bytes = render_cv_pdf(cv=cv, watermark=is_free, template=template, language=language)
             request.user.pdfs_downloaded += 1
             request.user.save(update_fields=["pdfs_downloaded", "updated_at"])
 

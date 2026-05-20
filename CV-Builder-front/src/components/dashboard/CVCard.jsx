@@ -138,24 +138,24 @@ const CVCard = ({
               <div className="mx-auto w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mb-5 rotate-3">
                 <AlertTriangle className="text-red-500" size={28} />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Resume?</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{t("dashboard.deleteResumeTitle")}</h3>
               <p className="text-sm text-slate-500 leading-relaxed mb-8">
-                Are you sure you want to delete{" "}
-                <span className="font-semibold text-slate-700">"{resume.title || "Untitled"}"</span>?
-                This action is permanent.
+                {t("dashboard.deleteResumeConfirm")}{" "}
+                <span className="font-semibold text-slate-700">"{resume.title || t("dashboard.untitledResume")}"</span>?
+                {" "}{t("dashboard.deleteResumePermanent")}
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
                   className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={confirmDelete}
                   className="flex-1 px-4 py-3 rounded-2xl bg-red-500 text-sm font-bold text-white hover:bg-red-600 shadow-lg shadow-red-200 transition-all active:scale-95"
                 >
-                  Delete
+                  {t("dashboard.delete")}
                 </button>
               </div>
             </div>

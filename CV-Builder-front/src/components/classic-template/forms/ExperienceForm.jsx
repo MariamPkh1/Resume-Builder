@@ -1,42 +1,9 @@
-import React, { useState } from "react";
-import { Briefcase, Trash2, X, Plus, Sparkles, Loader2, Check, GripVertical } from "lucide-react";
-import { improveSectionAPI } from "../../../services/aiService";
+import React from "react";
+import { Briefcase, Trash2, X, Plus, GripVertical } from "lucide-react";
 import { useLanguage } from "../../../context/LanguageContext";
-import { showToast } from "../../../utils/toast";
 
 const ExperienceForm = ({ section, setResumeData, cvId, dragHandleProps, onDeleteSection }) => {
-  const { t, language } = useLanguage();
-  const [improvingId, setImprovingId] = useState(null);
-  const [aiSuggestions, setAiSuggestions] = useState({});
-  const [aiError, setAiError] = useState(null);
-
-  const handleAIImprove = async (itemId, currentText) => {
-    if (!currentText || currentText.length < 15) {
-      showToast({ message: "Please write a bit more so the AI has context to improve!" });
-      return;
-    }
-    setImprovingId(itemId);
-    setAiError(null);
-    try {
-      const { data, error } = await improveSectionAPI({
-        cvId,
-        sectionType: "experience",
-        content: currentText,
-        context: { language },
-      });
-      if (error) {
-        setAiError(typeof error === "object" ? error.error || "AI improvement failed." : String(error));
-      } else {
-        const text = data?.improved_content ?? data?.result?.improved_text ?? data?.improved_text ?? null;
-        if (text) setAiSuggestions((prev) => ({ ...prev, [itemId]: text }));
-        else setAiError("No suggestion returned.");
-      }
-    } catch (err) {
-      setAiError("AI improvement failed. Please try again.");
-    } finally {
-      setImprovingId(null);
-    }
-  };
+  const { t } = useLanguage();
 
   const updateItem = (itemId, field, value) => {
     setResumeData((prev) => ({
@@ -55,15 +22,6 @@ const ExperienceForm = ({ section, setResumeData, cvId, dragHandleProps, onDelet
         };
       }),
     }));
-  };
-
-  const handleApplySuggestion = (itemId, text) => {
-    updateItem(itemId, "description", text);
-    setAiSuggestions((prev) => {
-      const next = { ...prev };
-      delete next[itemId];
-      return next;
-    });
   };
 
   const addEntry = () => {
@@ -164,51 +122,15 @@ const ExperienceForm = ({ section, setResumeData, cvId, dragHandleProps, onDelet
               {t("form.currentlyWorking")}
             </label>
 
-            <div className="relative">
-              <textarea
-                placeholder={t("placeholder.experienceDescription")}
-                className="w-full p-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-gray-400 transition-all text-sm text-gray-800 placeholder:text-gray-300 resize-none h-28 pb-10 leading-relaxed"
-                value={item.description || ""}
-                onChange={(e) => updateItem(item.id, "description", e.target.value)}
-              />
-              <button
-                type="button"
-                onClick={() => handleAIImprove(item.id, item.description)}
-                className="absolute bottom-3 right-3 flex items-center gap-1.5 text-[9px] font-semibold text-gray-400 hover:text-amber-600 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-lg transition-all"
-              >
-                {improvingId === item.id ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                {t("form.aiImprove")}
-              </button>
-
-              {aiSuggestions[item.id] && (
-                <div className="mt-3 space-y-2">
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider ml-1">
-                    {t("form.aiSuggestion") || "AI Suggestion"}
-                  </p>
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] text-gray-800 whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto">
-                    {aiSuggestions[item.id]}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleApplySuggestion(item.id, aiSuggestions[item.id])}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-900 text-white text-[10px] font-bold hover:bg-gray-700 transition-all ml-1"
-                  >
-                    <Check size={10} /> {t("form.applySuggestion") || "Apply suggestion"}
-                  </button>
-                </div>
-              )}
-            </div>
+            <textarea
+              placeholder={t("placeholder.experienceDescription")}
+              className="w-full p-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-gray-400 transition-all text-sm text-gray-800 placeholder:text-gray-300 resize-none h-28 leading-relaxed"
+              value={item.description || ""}
+              onChange={(e) => updateItem(item.id, "description", e.target.value)}
+            />
           </div>
         ))}
       </div>
-
-      {aiError && (
-        <div className="px-6 pb-4">
-          <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600">
-            {aiError}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

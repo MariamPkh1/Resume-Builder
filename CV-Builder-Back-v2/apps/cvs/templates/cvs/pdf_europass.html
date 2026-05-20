@@ -270,22 +270,22 @@
 
       {% if p %}
       <div class="sidebar-section">
-        <div class="sidebar-section-title">Personal Information</div>
+        <div class="sidebar-section-title">{% if pdf_language == "ka" %}პირადი ინფორმაცია{% else %}Personal Information{% endif %}</div>
         {% if p.email %}
         <div class="sidebar-contact-item">
-          <span class="sidebar-contact-label">Email:</span>
+          <span class="sidebar-contact-label">{% if pdf_language == "ka" %}ელფოსტა{% else %}Email{% endif %}:</span>
           <span class="sidebar-contact-value">{{ p.email }}</span>
         </div>
         {% endif %}
         {% if p.phone %}
         <div class="sidebar-contact-item">
-          <span class="sidebar-contact-label">Phone:</span>
+          <span class="sidebar-contact-label">{% if pdf_language == "ka" %}ტელეფონი{% else %}Phone{% endif %}:</span>
           <span class="sidebar-contact-value">{{ p.phone }}</span>
         </div>
         {% endif %}
         {% if p.location %}
         <div class="sidebar-contact-item">
-          <span class="sidebar-contact-label">Location:</span>
+          <span class="sidebar-contact-label">{% if pdf_language == "ka" %}მისამართი{% else %}Location{% endif %}:</span>
           <span class="sidebar-contact-value">{{ p.location }}</span>
         </div>
         {% endif %}
