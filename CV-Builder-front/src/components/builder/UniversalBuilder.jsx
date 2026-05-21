@@ -562,21 +562,6 @@ const UniversalBuilder = () => {
           cvId={resumeId}
           onClose={() => setShowAIImprove(false)}
           onApply={(id, content) => {
-            const extractExperienceDescription = (block, item) => {
-              const lines = block.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
-              if (lines.length === 0) return "";
-
-              let headerCount = 0;
-              if (item.position || item.title || item.company) headerCount++;
-              if (item.startDate || item.start || item.endDate || item.end) headerCount++;
-              if (item.location && String(item.location).trim()) headerCount++;
-
-              if (lines.length > headerCount) {
-                return lines.slice(headerCount).join("\n").trim();
-              }
-              return lines.join("\n").trim();
-            };
-
             const updatedSections = sections.map((s) => {
               if (s.id !== id) return s;
               // Summary, certificates etc: flat content
@@ -595,7 +580,7 @@ const UniversalBuilder = () => {
                         ? parts[0]
                         : null;
                   if (block == null) return item;
-                  return { ...item, description: extractExperienceDescription(block, item) };
+                  return { ...item, description: block.trim() };
                 });
                 return { ...s, items: updatedItems };
               }

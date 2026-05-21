@@ -54,9 +54,6 @@ const getContent = (section) => {
 
           case "experience":
             return [
-              [item.position, item.company].filter(Boolean).join(" — "),
-              [item.startDate, item.endDate].filter(Boolean).join(" – "),
-              item.location,
               item.description,
               Array.isArray(item.bullets) ? item.bullets.map(b => `• ${b}`).join("\n") : "",
             ].filter(Boolean).join("\n");
