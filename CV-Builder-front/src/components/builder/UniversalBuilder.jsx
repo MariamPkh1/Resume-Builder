@@ -573,12 +573,10 @@ const UniversalBuilder = () => {
 
               if (s.type === "experience") {
                 const updatedItems = items.map((item, i) => {
-                  const block =
-                    parts[i] !== undefined
-                      ? parts[i]
-                      : parts.length === 1 && i === 0
-                        ? parts[0]
-                        : null;
+                  if (items.length === 1 && i === 0) {
+                    return { ...item, description: content.trim() };
+                  }
+                  const block = parts[i] !== undefined ? parts[i] : null;
                   if (block == null) return item;
                   return { ...item, description: block.trim() };
                 });
