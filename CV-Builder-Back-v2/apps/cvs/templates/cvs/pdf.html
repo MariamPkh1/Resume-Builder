@@ -83,7 +83,7 @@
   <div class="content">
 
     <!-- HEADER -->
-    {% with p=d.personal_info %}
+    {% with p=d.personalInfo|default:d.personal_info %}
     {% if p %}
     <div class="header">
       <h1>{{ p.fullName|default:"" }}</h1>
@@ -145,7 +145,7 @@
               {% if item.endDate %}{{ item.endDate }}{% elif item.end %}{{ item.end }}{% endif %}
             </div>
           </div>
-          <div class="item-subtitle">{{ item.degree|default:"" }}{% if item.field %} in {{ item.field }}{% endif %}</div>
+          <div class="item-subtitle">{{ item.degree|default:"" }}{% if item.field %} in {{ item.field }}{% endif %}{% if item.city or item.country %}{% if item.degree or item.field %} · {% endif %}{% if item.city %}{{ item.city }}{% endif %}{% if item.city and item.country %}, {% endif %}{% if item.country %}{{ item.country }}{% endif %}{% endif %}</div>
           {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
         </div>
         {% endfor %}

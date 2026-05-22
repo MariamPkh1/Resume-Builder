@@ -14,7 +14,7 @@ const SECTIONS = [
 
 const SECTION_BLUEPRINTS = {
   experience: { position: "", company: "", location: "", startDate: "", endDate: "", description: "", current: false },
-  education: { degree: "", school: "", location: "", startDate: "", endDate: "", description: "" },
+  education: { degree: "", school: "", city: "", country: "", startDate: "", endDate: "", description: "" },
   skills: { name: "", level: "Intermediate" },
   languages: { language: "", level: "B2" },
   projects: { name: "", link: "", date: "", description: "" },
@@ -31,7 +31,7 @@ const SectionModal = ({ onAdd, onClose }) => {
       id: `sec_${Date.now()}`,
       type: section.type,
       title,
-      items: section.type === "summary" ? [] : [{ ...SECTION_BLUEPRINTS[section.type] }],
+      items: section.type === "summary" ? [] : [{ id: `item_${Date.now()}`, ...SECTION_BLUEPRINTS[section.type] }],
       content: section.type === "summary" ? "" : undefined
     };
     onAdd(newSection);

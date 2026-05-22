@@ -124,13 +124,18 @@ const TemplatePreview = ({ tmpl }) => {
 // ── Main Component ────────────────────────────────────────────────────────────
 const TemplateSelection = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser, canCreateResume } = useAuth();
   const { t } = useLanguage();
   const [isCreating, setIsCreating] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
 
   const handleStart = async (templateId) => {
     if (!user) { navigate("/login", { state: { selectedTemplate: templateId } }); return; }
+    if (!canCreateResume) {
+      showToast({ message: "You've reached your resume limit. Upgrade to Pro for more!" });
+      navigate("/pricing");
+      return;
+    }
     setIsCreating(templateId);
     const cvData = buildDefaultCvData(user);
     const sectionOrder = cvData.sections?.map((s) => s.id) ?? [];
@@ -142,6 +147,7 @@ const TemplateSelection = () => {
         section_order: sectionOrder,
         cv_data: cvData,
       });
+      await refreshUser?.();
       navigate(`/app/builder/${templateId}/${response.data.id}`);
     } catch (err) {
       if (err.response?.status === 403) {

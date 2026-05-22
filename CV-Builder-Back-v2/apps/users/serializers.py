@@ -100,12 +100,16 @@ class MeSerializer(serializers.ModelSerializer):
         return _is_trial_eligible(obj)
 
     def get_limits(self, obj):
+        from apps.users.limits import limits_for_user, user_at_cv_limit
+
         l = limits_for_user(obj)
         return {
             "max_cvs": l.max_cvs,
             "max_versions": l.max_versions,
             "max_pdfs_per_month": l.max_pdfs_per_month,
             "max_storage_bytes": l.max_storage_bytes,
+            "cv_slots_used": obj.cv_slots_used,
+            "at_cv_limit": user_at_cv_limit(obj),
         }
 
 

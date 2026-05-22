@@ -379,7 +379,7 @@
           <div class="item">
             <div class="item-header">
               <div class="item-header-left">
-                <div class="item-degree">{{ item.degree|default:"" }}{% if item.field %} in {{ item.field }}{% endif %}</div>
+                <div class="item-degree">{{ item.degree|default:"" }}{% if item.field %} in {{ item.field }}{% endif %}{% if item.city or item.country %}{% if item.degree or item.field %} · {% endif %}{% if item.city %}{{ item.city }}{% endif %}{% if item.city and item.country %}, {% endif %}{% if item.country %}{{ item.country }}{% endif %}{% endif %}</div>
                 <div class="item-school">{{ item.school|default:"" }}</div>
               </div>
               <div class="item-header-right">

@@ -43,3 +43,25 @@ def limits_for_user(user) -> Limits:
     if tier == "pro":
         return PRO
     return FREE
+
+
+def cv_slots_used(user) -> int:
+    """Lifetime resume slots consumed (increments on each CV created, never on delete)."""
+    from apps.users.models import User
+
+    if user.pk is None:
+        return 0
+    value = User.objects.filter(pk=user.pk).values_list("cv_slots_used", flat=True).first()
+    return int(value or 0)
+
+
+def user_at_cv_limit(user) -> bool:
+    """True when lifetime slots used >= plan cap (Pro trial uses Pro cap via effective_tier)."""
+    limits = limits_for_user(user)
+    if limits.max_cvs == -1:
+        return False
+    return cv_slots_used(user) >= limits.max_cvs
+
+
+def can_create_cv(user) -> bool:
+    return not user_at_cv_limit(user)

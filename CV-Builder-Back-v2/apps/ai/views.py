@@ -523,11 +523,10 @@ class TranslateCVAPIView(APIView):
         except CV.DoesNotExist:
             return Response({"detail": "CV not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        limits = limits_for_user(request.user)
-        if limits.max_cvs != -1:
-            current = CV.objects.filter(user=request.user, is_archived=False).count()
-            if current >= limits.max_cvs:
-                raise PermissionDenied("CV limit reached. Upgrade to create translated copies.")
+        from apps.users.limits import user_at_cv_limit
+
+        if user_at_cv_limit(request.user):
+            raise PermissionDenied("CV limit reached. Upgrade to create translated copies.")
 
         feature = AIUsage.Feature.TRANSLATE_CV
         quota = get_ai_quota_status(request.user, feature)

@@ -1,8 +1,11 @@
 from io import BytesIO, StringIO
 from unittest.mock import patch
 
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -78,7 +81,7 @@ class CVAPITests(APITestCase):
         created = CV.objects.get(id=response.data["id"])
         self.assertEqual(created.user_id, user.id)
 
-    def test_free_user_cannot_create_more_than_two_active_cvs(self):
+    def test_free_user_cannot_create_more_than_two_cvs(self):
         user = self.create_user()
         self.create_cv(user, title="CV 1")
         self.create_cv(user, title="CV 2")
@@ -98,6 +101,114 @@ class CVAPITests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(CV.objects.filter(user=user).count(), 2)
+
+    def test_free_user_cannot_create_third_cv_when_one_is_archived(self):
+        user = self.create_user()
+        self.create_cv(user, title="CV 1")
+        cv2 = self.create_cv(user, title="CV 2")
+        cv2.is_archived = True
+        cv2.save(update_fields=["is_archived", "updated_at"])
+        self.authenticate(user)
+
+        response = self.client.post(
+            "/api/cvs/",
+            {
+                "title": "CV 3",
+                "cv_data": {},
+                "section_order": [],
+                "language": "en",
+                "template": "modern",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(CV.objects.filter(user=user).count(), 2)
+
+    def test_free_user_cannot_create_after_deleting_when_slots_exhausted(self):
+        user = self.create_user()
+        cv1 = self.create_cv(user, title="CV 1")
+        self.create_cv(user, title="CV 2")
+        user.refresh_from_db()
+        self.assertEqual(user.cv_slots_used, 2)
+        cv1.delete()
+        self.assertEqual(CV.objects.filter(user=user).count(), 1)
+        self.authenticate(user)
+
+        response = self.client.post(
+            "/api/cvs/",
+            {
+                "title": "CV 3",
+                "cv_data": {},
+                "section_order": [],
+                "language": "en",
+                "template": "modern",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        user.refresh_from_db()
+        self.assertEqual(user.cv_slots_used, 2)
+
+    def test_free_user_can_use_second_slot_after_deleting_first_cv(self):
+        user = self.create_user()
+        cv1 = self.create_cv(user, title="CV 1")
+        user.refresh_from_db()
+        self.assertEqual(user.cv_slots_used, 1)
+        cv1.delete()
+        self.authenticate(user)
+
+        response = self.client.post(
+            "/api/cvs/",
+            {
+                "title": "CV 2",
+                "cv_data": {},
+                "section_order": [],
+                "language": "en",
+                "template": "modern",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user.refresh_from_db()
+        self.assertEqual(user.cv_slots_used, 2)
+        self.assertEqual(CV.objects.filter(user=user).count(), 1)
+
+    def test_pro_trial_allows_create_beyond_free_cap(self):
+        user = self.create_user(subscription_tier="free")
+        self.create_cv(user, title="CV 1")
+        self.create_cv(user, title="CV 2")
+        user.refresh_from_db()
+        self.assertEqual(user.cv_slots_used, 2)
+
+        user.trial_ends_at = timezone.now() + timedelta(days=7)
+        user.save(update_fields=["trial_ends_at", "updated_at"])
+        self.assertEqual(user.effective_tier(), "pro")
+
+        from apps.users.limits import limits_for_user, user_at_cv_limit
+
+        self.assertEqual(limits_for_user(user).max_cvs, 20)
+        self.assertFalse(user_at_cv_limit(user))
+
+        self.authenticate(user)
+        response = self.client.post(
+            "/api/cvs/",
+            {
+                "title": "CV 3 (trial)",
+                "cv_data": {},
+                "section_order": [],
+                "language": "en",
+                "template": "modern",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user.refresh_from_db()
+        self.assertEqual(user.cv_slots_used, 3)
+        self.assertEqual(CV.objects.filter(user=user).count(), 3)
 
     def test_user_cannot_access_another_users_cv(self):
         owner = self.create_user()

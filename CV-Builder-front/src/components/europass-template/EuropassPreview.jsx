@@ -151,6 +151,44 @@ const EuropassPreview = ({ data }) => {
                 </div>
               )}
 
+              {kind === "education" && (
+                <div className="space-y-6">
+                  {(Array.isArray(section.items) ? section.items : []).map((item, i) => {
+                    const start = String(item.startDate || item.start || "").trim();
+                    const end = String(item.endDate || item.end || "").trim();
+                    let dateRange = "";
+                    if (start && end) dateRange = `${start} — ${end}`;
+                    else if (start) dateRange = start;
+                    else if (end) dateRange = end;
+                    const location = [item.city, item.country].filter(Boolean).join(", ");
+                    const subtitle = [item.degree, location].filter(Boolean).join(" · ");
+                    if (!item.school && !subtitle && !dateRange && !item.description) return null;
+                    return (
+                      <div key={item.id ?? i}>
+                        {(item.school || dateRange) && (
+                          <div className="flex justify-between items-baseline mb-1 gap-2">
+                            <h4 className="font-bold text-slate-800 text-[14px] min-w-0 flex-1">
+                              {item.school}
+                            </h4>
+                            {dateRange ? (
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded shrink-0 max-w-[11rem] text-right leading-snug">
+                                {dateRange}
+                              </span>
+                            ) : null}
+                          </div>
+                        )}
+                        {subtitle ? (
+                          <p className="text-blue-600 text-[12px] font-semibold mb-2">{subtitle}</p>
+                        ) : null}
+                        {item.description ? (
+                          <p className="text-[11px] text-slate-500 whitespace-pre-line">{item.description}</p>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {kind === "certificates" && (
                 <div className="space-y-6">
                   {(section.items || []).map((item, i) => {
@@ -186,26 +224,46 @@ const EuropassPreview = ({ data }) => {
                 </div>
               )}
 
-              {kind !== "summary" && kind !== "projects" && kind !== "certificates" && (
+              {kind === "experience" && (
               <div className="space-y-6">
-                {section.items?.map((item, i) => (
+                {(Array.isArray(section.items) ? section.items : []).map((item, i) => {
+                  const start = String(item.startDate || item.start || "").trim();
+                  const end = item.current
+                    ? getPresentText()
+                    : String(item.endDate || item.end || "").trim();
+                  let dateRange = "";
+                  if (start && end) dateRange = `${start} — ${end}`;
+                  else if (start) dateRange = start;
+                  else if (end) dateRange = end;
+                  if (!(item.position || item.title) && !item.company && !dateRange && !item.description) {
+                    return null;
+                  }
+                  return (
                   <div key={item.id ?? i}>
                     <div className="flex justify-between items-baseline mb-1 gap-2">
-                      <h4 className="font-bold text-slate-800 text-[14px]">
-                        {item.position || item.degree || item.name || item.title}
+                      <h4 className="font-bold text-slate-800 text-[14px] min-w-0 flex-1">
+                        {item.position || item.title}
                       </h4>
-                      <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded shrink-0">
-                        {item.startDate || item.start} — {item.current ? getPresentText() : (item.endDate || item.end)}
-                      </span>
+                      {dateRange ? (
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded shrink-0 max-w-[11rem] text-right leading-snug">
+                          {dateRange}
+                        </span>
+                      ) : null}
                     </div>
-                    <p className="text-blue-600 text-[12px] font-semibold mb-2">
-                      {item.company || item.school || item.issuer || item.organization}
-                    </p>
-                    <p className="text-[11px] text-slate-500 whitespace-pre-line">
-                      {item.description}
-                    </p>
+                    {item.company ? (
+                      <p className="text-blue-600 text-[12px] font-semibold mb-2">
+                        {item.company}
+                        {item.location ? ` · ${item.location}` : ""}
+                      </p>
+                    ) : null}
+                    {item.description ? (
+                      <p className="text-[11px] text-slate-500 whitespace-pre-line">
+                        {item.description}
+                      </p>
+                    ) : null}
                   </div>
-                ))}
+                  );
+                })}
               </div>
               )}
             </section>

@@ -15,7 +15,17 @@ import { showToast } from "../utils/toast";
 const Dashboard = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { isPro, isTrialActive, daysLeftInTrial, refreshUser } = useAuth();
+  const {
+    user,
+    isPro,
+    isTrialActive,
+    daysLeftInTrial,
+    refreshUser,
+    maxCvs,
+    cvSlotsUsed: authCvSlotsUsed,
+    atCvLimit,
+    canCreateResume,
+  } = useAuth();
 
   const [resumes, setResumes] = useState([]);
   const [labels, setLabels] = useState([]);
@@ -29,6 +39,8 @@ const Dashboard = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceRef = useRef(null);
   const [showCreateLabel, setShowCreateLabel] = useState(false);
+
+  const cvSlotsUsed = authCvSlotsUsed;
 
   // Debounce search — avoids rapid API calls; 400ms keeps typing smooth without laggy refetches
   useEffect(() => {
@@ -48,7 +60,8 @@ const Dashboard = () => {
     api.get("/api/labels/")
       .then(({ data }) => setLabels(data))
       .catch(() => {});
-  }, []);
+    refreshUser?.();
+  }, [refreshUser]);
 
   const fetchResumes = useCallback(async () => {
     if (hasLoadedOnceRef.current) setListFetching(true);
@@ -86,7 +99,10 @@ const Dashboard = () => {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleCreate = () => {
-    if (!isPro && resumes.length >= 2) { navigate("/pricing"); return; }
+    if (!canCreateResume) {
+      navigate("/pricing");
+      return;
+    }
     navigate("/templates");
   };
 
@@ -199,7 +215,9 @@ const Dashboard = () => {
               <Zap size={12} className="text-blue-500" />
               <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">
                 {t("dashboard.freeTierActive")}:{" "}
-                <span className="text-slate-900 font-bold">{resumes.length}/2 Resumes</span>
+                <span className="text-slate-900 font-bold">
+                  {cvSlotsUsed}/{maxCvs} {t("dashboard.resumes")}
+                </span>
               </p>
             </div>
             <button
@@ -264,7 +282,8 @@ const Dashboard = () => {
             <button
               type="button"
               onClick={handleCreate}
-              className="flex items-center gap-2 px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-white bg-slate-900 rounded-lg hover:bg-blue-600 transition-all active:scale-95"
+              disabled={!canCreateResume}
+              className="flex items-center gap-2 px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-white bg-slate-900 rounded-lg hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none disabled:hover:bg-slate-900"
             >
               <Plus size={16} /> {t("dashboard.createNewResume")}
             </button>

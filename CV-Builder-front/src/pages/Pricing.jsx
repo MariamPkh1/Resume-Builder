@@ -390,6 +390,7 @@ const Pricing = () => {
       await api.post("/api/subscriptions/start-trial/");
       await refreshUser();
       showToast({ message: t("pricing.trialStarted") });
+      navigate("/app");
     } catch (err) {
       showToast({ message: err?.response?.data?.detail || t("pricing.paymentError") });
     } finally {

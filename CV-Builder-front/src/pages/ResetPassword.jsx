@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle, Lock, ShieldCheck } from "lucide-react";
 import api from "../services/api";
+import { useLanguage } from "../context/LanguageContext";
 
 const ResetPassword = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,16 +21,16 @@ const ResetPassword = () => {
     if (!success) return;
     const timeoutId = setTimeout(() => {
       navigate("/login", {
-        state: { message: "Password updated successfully. Please sign in." },
+        state: { message: t("resetPassword.loginSuccessMessage") },
       });
     }, 1400);
     return () => clearTimeout(timeoutId);
-  }, [success, navigate]);
+  }, [success, navigate, t]);
 
   const handleReset = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      return setError("Passwords do not match");
+      return setError(t("register.passwordsMismatch"));
     }
 
     setLoading(true);
@@ -41,9 +43,9 @@ const ResetPassword = () => {
         new_password: password,
         repeat_password: confirmPassword,
       });
-      setSuccess("Password updated successfully. Redirecting to login...");
+      setSuccess(t("resetPassword.successMessage"));
     } catch (err) {
-      setError(err.response?.data?.detail || "Link expired or invalid. Please request a new one.");
+      setError(err.response?.data?.detail || t("resetPassword.errorInvalid"));
     } finally {
       setLoading(false);
     }
@@ -60,9 +62,9 @@ const ResetPassword = () => {
         </div>
       )}
       <div className="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-md">
-        <h2 className="text-3xl font-black text-gray-900 mb-2">New Password</h2>
-        <p className="text-gray-500 mb-8 text-sm">Enter your email, reset code, and your new password.</p>
-        
+        <h2 className="text-3xl font-black text-gray-900 mb-2">{t("resetPassword.title")}</h2>
+        <p className="text-gray-500 mb-8 text-sm">{t("resetPassword.instructions")}</p>
+
         <form onSubmit={handleReset} className="space-y-4">
           <div className="relative">
             <ShieldCheck className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
@@ -70,7 +72,7 @@ const ResetPassword = () => {
               required
               type="email"
               className="w-full pl-10 p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500 outline-none"
-              placeholder="Email Address"
+              placeholder={t("resetPassword.emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -82,41 +84,42 @@ const ResetPassword = () => {
               type="text"
               maxLength={6}
               className="w-full pl-10 p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500 outline-none"
-              placeholder="6-digit Reset Code"
+              placeholder={t("resetPassword.codePlaceholder")}
               value={code}
               onChange={(e) => setCode(e.target.value)}
             />
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-            <input 
+            <input
               required
               type="password"
-              className="w-full pl-10 p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500 outline-none" 
-              placeholder="New Password" 
+              className="w-full pl-10 p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500 outline-none"
+              placeholder={t("resetPassword.newPassword")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <div className="relative">
             <ShieldCheck className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-            <input 
+            <input
               required
               type="password"
-              className="w-full pl-10 p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500 outline-none" 
-              placeholder="Confirm New Password" 
+              className="w-full pl-10 p-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500 outline-none"
+              placeholder={t("resetPassword.confirmPassword")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
-          
+
           {error && <p className="text-red-500 text-xs font-medium px-1">{error}</p>}
-          
-          <button 
+
+          <button
+            type="submit"
             disabled={loading}
             className="w-full py-4 bg-amber-600 text-white rounded-2xl font-bold hover:bg-amber-700 transition-all disabled:opacity-50"
           >
-            {loading ? "Updating..." : "Update Password"}
+            {loading ? t("resetPassword.updating") : t("resetPassword.updateButton")}
           </button>
         </form>
       </div>

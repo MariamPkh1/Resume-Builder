@@ -259,8 +259,18 @@ const UniversalBuilder = () => {
 
   const handleDownloadPDF = async () => {
     setIsExporting(true);
-    debouncedSave.flush();
+    debouncedSave.cancel();
     try {
+      setSaveStatus("saving");
+      await api.patch(`/api/cvs/${resumeId}/`, {
+        title: resumeData?.title || "Untitled Resume",
+        template,
+        language: resumeData?.language || language || "en",
+        section_order: resumeData?.section_order || [],
+        cv_data: resumeData?.cv_data,
+      });
+      setSaveStatus("saved");
+
       const response = await api.get(`/api/cvs/${resumeId}/export/pdf/?template=${template}&language=${language}`, {
         responseType: "blob",
       });

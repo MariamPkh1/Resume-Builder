@@ -62,6 +62,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     pdfs_downloaded = models.PositiveIntegerField(default=0)
     ai_analysis_used = models.PositiveIntegerField(default=0)
+    # Lifetime CV creations consumed toward plan limit (never decremented on delete/archive).
+    cv_slots_used = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -156,6 +156,23 @@ export const AuthProvider = ({ children }) => {
   const atsChecksUsed = limitsObj.ats_checks_used ?? limitsObj.ats_checks?.used ?? aiAnalysisUsed;
   const atsChecksLimit = limitsObj.ats_checks_limit ?? limitsObj.ats_checks?.limit ?? 20;
 
+  const effectiveTier = u?.effective_tier || u?.subscription_tier || tier;
+  const cvSlotsUsed = Number(limitsObj.cv_slots_used) || 0;
+  const maxCvsFromApi = limitsObj.max_cvs;
+  const maxCvs =
+    typeof maxCvsFromApi === "number"
+      ? maxCvsFromApi
+      : effectiveTier === "professional"
+        ? -1
+        : effectiveTier === "pro"
+          ? 20
+          : 2;
+  const atCvLimit =
+    typeof limitsObj.at_cv_limit === "boolean"
+      ? limitsObj.at_cv_limit
+      : maxCvs !== -1 && cvSlotsUsed >= maxCvs;
+  const canCreateResume = !atCvLimit;
+
   return (
     <AuthContext.Provider 
       value={{ 
@@ -172,6 +189,10 @@ export const AuthProvider = ({ children }) => {
         trialEligible,
         daysLeftInTrial: getDaysLeftInTrial(),
         language: u?.preferred_language || 'en',
+        maxCvs,
+        cvSlotsUsed,
+        atCvLimit,
+        canCreateResume,
         limits: {
           atsChecksUsed: Number(atsChecksUsed) || 0,
           atsChecksLimit: Number(atsChecksLimit) || 20,

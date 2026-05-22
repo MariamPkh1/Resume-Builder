@@ -18,7 +18,7 @@ from .serializers import CVDetailSerializer, CVListSerializer
 from apps.cv_versions.models import CVVersion
 from apps.cv_versions.serializers import CVVersionDetailSerializer, CVVersionSerializer
 from apps.labels.models import Label
-from apps.users.limits import limits_for_user
+from apps.users.limits import limits_for_user, user_at_cv_limit
 from .pdf import check_pdf_engine, render_cv_pdf
 
 
@@ -48,11 +48,8 @@ class CVViewSet(viewsets.ModelViewSet):
         return CVDetailSerializer
 
     def perform_create(self, serializer):
-        limits = limits_for_user(self.request.user)
-        if limits.max_cvs != -1:
-            current = CV.objects.filter(user=self.request.user, is_archived=False).count()
-            if current >= limits.max_cvs:
-                raise PermissionDenied("CV limit reached. Upgrade to create more CVs.")
+        if user_at_cv_limit(self.request.user):
+            raise PermissionDenied("CV limit reached. Upgrade to create more CVs.")
         serializer.save(user=self.request.user)
 
     def perform_update(self, serializer):
@@ -61,11 +58,8 @@ class CVViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def duplicate(self, request, pk=None):
         cv = self.get_object()
-        limits = limits_for_user(request.user)
-        if limits.max_cvs != -1:
-            current = CV.objects.filter(user=request.user, is_archived=False).count()
-            if current >= limits.max_cvs:
-                raise PermissionDenied("CV limit reached. Upgrade to duplicate/create more CVs.")
+        if user_at_cv_limit(request.user):
+            raise PermissionDenied("CV limit reached. Upgrade to duplicate/create more CVs.")
 
         new_cv = CV.objects.create(
             user=request.user,
