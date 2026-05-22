@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import api from "../services/api";
@@ -9,12 +9,11 @@ import { auth, googleProvider } from "../firebase";
 
 const Login = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState({ type: 'idle', message: location.state?.message || '' });
+  const [status, setStatus] = useState({ type: 'idle', message: '' });
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleGoogleClick = async () => {

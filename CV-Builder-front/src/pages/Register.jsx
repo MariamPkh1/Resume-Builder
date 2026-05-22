@@ -73,7 +73,7 @@ const Register = () => {
     setError(null);
     try {
       await api.post("/api/auth/verify-email/", { email: formData.email, code: formData.code });
-      navigate("/login", { state: { message: t("register.verifiedMessage") } });
+      navigate("/login");
     } catch (err) {
       setError(err.response?.data?.detail || t("register.invalidCode"));
     } finally {
