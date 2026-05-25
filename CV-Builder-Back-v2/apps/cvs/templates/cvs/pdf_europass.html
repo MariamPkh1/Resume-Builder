@@ -4,31 +4,19 @@
   <meta charset="utf-8" />
   <style>
     {% include "cvs/includes/pdf_font_faces.inc" %}
+    /*
+     * Europass PDF scale (~82% of browser preview px).
+     * WeasyPrint + Noto Sans Georgian renders larger than Tailwind in Chrome.
+     * Preview reference: EuropassPreview.jsx
+     */
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: "Noto Sans Georgian", "DejaVu Sans", sans-serif;
-      font-size: 12px;
-      color: #222;
-      background: linear-gradient(to right, #2e3d52 220px, #f8fafc 220px);
+      font-size: 10px;
+      color: #1e293b;
+      background: linear-gradient(to right, #37474f 220px, #f8fafc 220px);
       position: relative;
-    }
-
-    /* Watermark — subtle, behind content, on the white area only */
-    .watermark {
-      position: fixed;
-      top: 50%;
-      left: 60%;
-      transform: translate(-50%, -50%) rotate(-25deg);
-      transform-origin: center center;
-      font-size: 56px;
-      font-weight: 700;
-      color: #94a3b8;
-      opacity: 0.18;
-      white-space: nowrap;
-      letter-spacing: 2px;
-      pointer-events: none;
-      z-index: 0;
     }
 
     .layout {
@@ -39,16 +27,16 @@
       table-layout: fixed;
     }
 
-    /* ── SIDEBAR ── */
+    /* ── SIDEBAR (preview: 10px titles, 11px contact, 9px tags) ── */
     .sidebar {
       display: table-cell;
       width: 220px;
       color: #e2e8f0;
-      padding: 32px 16px;
+      padding: 32px 24px;
       vertical-align: top;
+      background: transparent;
     }
 
-    /* Photo block */
     .sidebar-photo-wrap {
       width: 100%;
       margin-bottom: 24px;
@@ -60,153 +48,118 @@
       width: 160px;
       height: 160px;
       object-fit: cover;
-      border: 2px solid rgba(255, 255, 255, 0.1);
+      border: 4px solid rgba(255, 255, 255, 0.1);
       background: #1f2937;
     }
 
     .sidebar-photo--rounded { border-radius: 16px; }
     .sidebar-photo--circle  { border-radius: 50%; }
 
-    .sidebar-section {
-      margin-bottom: 24px;
-    }
+    .sidebar-section { margin-bottom: 24px; }
 
     .sidebar-section-title {
-      font-size: 8px;
+      font-size: 9px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.15em;
-      color: #7c92aa;
+      letter-spacing: 0.2em;
+      color: #93c5fd;
       margin-bottom: 10px;
-      padding-bottom: 5px;
-      border-bottom: 1px solid #3d5068;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(147, 197, 253, 0.2);
     }
 
     .sidebar-contact-item {
-      font-size: 10.5px;
-      color: #c5d3e0;
+      font-size: 10px;
+      color: #e2e8f0;
+      opacity: 0.9;
       margin-bottom: 8px;
-      padding-bottom: 8px;
-      line-height: 1.4;
+      line-height: 1.45;
       word-wrap: break-word;
       word-break: break-word;
       overflow-wrap: break-word;
-      border-bottom: 1px solid rgba(124, 146, 170, 0.2);
-    }
-
-    .sidebar-contact-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-      margin-bottom: 0;
     }
 
     .sidebar-contact-label {
-      font-size: 9px;
-      color: #7c92aa;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-right: 4px;
     }
 
-    .sidebar-contact-value {
-      color: #c5d3e0;
-      word-wrap: break-word;
-      word-break: break-word;
-      overflow-wrap: anywhere;
-    }
-
-    .sidebar-skills {
-      font-size: 0;
-      line-height: 0;
-    }
+    .sidebar-skills { font-size: 0; line-height: 0; }
 
     .sidebar-skill {
       display: inline-block;
-      background: #3d5068;
-      color: #c5d3e0;
-      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
       padding: 4px 8px;
-      font-size: 9.5px;
+      font-size: 8px;
       line-height: 1.2;
       margin: 0 4px 4px 0;
       max-width: 100%;
       word-wrap: break-word;
-      word-break: break-word;
-      overflow-wrap: break-word;
       vertical-align: top;
     }
 
-    .sidebar-lang-item {
-      display: table;
-      width: 100%;
-      font-size: 10.5px;
-      color: #c5d3e0;
-      margin-bottom: 5px;
-    }
-
-    .sidebar-lang-name {
-      display: table-cell;
-      text-align: left;
-    }
-
-    .sidebar-lang-level {
-      display: table-cell;
-      text-align: right;
-      font-size: 9.5px;
-      color: #7c92aa;
-    }
-
-    /* ── MAIN ── */
+    /* ── MAIN (preview: p-12 ≈ 48px) ── */
     .main {
       display: table-cell;
-      padding: 32px 30px;
+      padding: 40px 44px;
       background: transparent;
       vertical-align: top;
     }
 
-    .name-block {
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 2px solid #e2e8f0;
-    }
+    .name-block { margin-bottom: 32px; }
 
     .main-name {
-      font-size: 32px;
-      font-weight: 700;
-      color: #1a202c;
-      line-height: 1.1;
-      margin-bottom: 4px;
-      letter-spacing: -0.5px;
+      font-size: 28px;
+      font-weight: 300;
+      color: #0f172a;
+      line-height: 1.15;
+      margin-bottom: 6px;
     }
 
     .main-jobtitle {
-      font-size: 14px;
-      color: #3b82f6;
-      font-weight: 400;
+      font-size: 11px;
+      color: #2563eb;
+      font-weight: 500;
     }
 
-    .section { margin-bottom: 20px; }
+    .section { margin-bottom: 28px; }
 
-    .section-title {
-      font-size: 8.5px;
+    .section-title-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 14px;
+    }
+
+    .section-title-text {
+      white-space: nowrap;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.15em;
+      letter-spacing: 0.2em;
       color: #94a3b8;
-      margin-bottom: 10px;
+      padding-right: 14px;
+      vertical-align: middle;
     }
 
-    .summary-text {
-      font-size: 11.5px;
-      color: #4a5568;
-      line-height: 1.7;
+    .section-title-line-cell {
+      width: 100%;
+      vertical-align: middle;
+      padding: 0;
     }
 
-    .item {
-      margin-bottom: 12px;
-      padding-bottom: 12px;
+    .section-title-hr {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 0;
+      height: 0;
+      width: 100%;
     }
+
+    /* Shared entry typography (experience, education, projects, certificates) */
+    .entry { margin-bottom: 18px; }
+    .entry:last-child { margin-bottom: 0; }
 
     .item-header {
       display: table;
@@ -228,29 +181,79 @@
       padding-left: 8px;
     }
 
-    .item-degree { font-size: 10.5px; color: #64748b; margin-bottom: 2px; }
-    .item-school { font-size: 13px; font-weight: 700; color: #3b82f6; }
-    .item-title { font-weight: 700; font-size: 12.5px; color: #1a202c; }
-    .item-date { font-size: 9.5px; color: #94a3b8; white-space: nowrap; }
-    .item-subtitle { font-size: 10.5px; color: #64748b; margin-top: 2px; }
+    .item-title {
+      font-weight: 700;
+      font-size: 11.5px;
+      color: #1e293b;
+      line-height: 1.35;
+    }
+
+    .item-date-pill {
+      font-size: 9px;
+      font-weight: 700;
+      color: #94a3b8;
+      background: #f8fafc;
+      padding: 3px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+      display: inline-block;
+      line-height: 1.25;
+      max-width: 10rem;
+      text-align: right;
+    }
+
+    .item-highlight-subtitle {
+      font-size: 10.5px;
+      color: #2563eb;
+      font-weight: 400;
+      margin-top: 2px;
+      margin-bottom: 6px;
+    }
 
     .item-description {
-      font-size: 10.5px;
-      color: #4a5568;
-      margin-top: 5px;
-      line-height: 1.6;
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 4px;
+      line-height: 1.55;
       white-space: pre-line;
     }
 
-    .cert-item { font-size: 11.5px; margin-bottom: 6px; }
-    .cert-issuer { font-size: 10.5px; color: #64748b; }
+    .item-header-right-meta {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .item-date-pill--inline {
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .item-project-link {
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 6px;
+      text-decoration: none;
+      line-height: 0;
+    }
+
+    .item-project-link svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+
+    .summary-text {
+      font-size: 11px;
+      color: #475569;
+      line-height: 1.65;
+      font-style: italic;
+      white-space: pre-line;
+    }
   </style>
 </head>
 <body>
 
-  {% if watermark %}
-    <div class="watermark">Made with Nebula</div>
-  {% endif %}
+  {% include "cvs/includes/pdf_watermark.inc" %}
 
   {% with d=cv.cv_data %}
   {% with p=d.personalInfo|default:d.personal_info %}
@@ -274,31 +277,31 @@
         {% if p.email %}
         <div class="sidebar-contact-item">
           <span class="sidebar-contact-label">{% if pdf_language == "ka" %}ელფოსტა{% else %}Email{% endif %}:</span>
-          <span class="sidebar-contact-value">{{ p.email }}</span>
+          {{ p.email }}
         </div>
         {% endif %}
         {% if p.phone %}
         <div class="sidebar-contact-item">
           <span class="sidebar-contact-label">{% if pdf_language == "ka" %}ტელეფონი{% else %}Phone{% endif %}:</span>
-          <span class="sidebar-contact-value">{{ p.phone }}</span>
+          {{ p.phone }}
         </div>
         {% endif %}
         {% if p.location %}
         <div class="sidebar-contact-item">
           <span class="sidebar-contact-label">{% if pdf_language == "ka" %}მისამართი{% else %}Location{% endif %}:</span>
-          <span class="sidebar-contact-value">{{ p.location }}</span>
+          {{ p.location }}
         </div>
         {% endif %}
         {% if p.linkedin %}
         <div class="sidebar-contact-item">
           <span class="sidebar-contact-label">LinkedIn:</span>
-          <span class="sidebar-contact-value">{{ p.linkedin }}</span>
+          {{ p.linkedin }}
         </div>
         {% endif %}
         {% if p.website %}
         <div class="sidebar-contact-item">
           <span class="sidebar-contact-label">Website:</span>
-          <span class="sidebar-contact-value">{{ p.website }}</span>
+          {{ p.website }}
         </div>
         {% endif %}
       </div>
@@ -307,7 +310,7 @@
       {% for section in d.sections %}
         {% if section.type == "skills" %}
         <div class="sidebar-section">
-          <div class="sidebar-section-title">{{ section.title|default:"Skills" }}</div>
+          <div class="sidebar-section-title">{% include "cvs/includes/pdf_section_title.inc" with section_type="skills" %}</div>
           <div class="sidebar-skills">
             {% for item in section.items %}
               {% if item.name %}<span class="sidebar-skill">{{ item.name }}</span>{% endif %}
@@ -318,13 +321,23 @@
 
         {% if section.type == "languages" %}
         <div class="sidebar-section">
-          <div class="sidebar-section-title">{{ section.title|default:"Languages" }}</div>
-          {% for item in section.items %}
-          <div class="sidebar-lang-item">
-            <span class="sidebar-lang-name">{% if item.language %}{{ item.language }}{% elif item.name %}{{ item.name }}{% endif %}</span>
-            <span class="sidebar-lang-level">{% if item.level %}{{ item.level }}{% elif item.proficiency %}{{ item.proficiency }}{% endif %}</span>
+          <div class="sidebar-section-title">{% include "cvs/includes/pdf_section_title.inc" with section_type="languages" %}</div>
+          <div class="sidebar-skills">
+            {% for item in section.items %}
+              {% firstof item.language item.name as lang_label %}
+              {% if lang_label %}
+              <span class="sidebar-skill">
+                {% if item.level %}
+                  {{ lang_label }} ({% include "cvs/includes/pdf_lang_level.inc" with level=item.level %})
+                {% elif item.proficiency %}
+                  {{ lang_label }} ({% include "cvs/includes/pdf_lang_level.inc" with level=item.proficiency %})
+                {% else %}
+                  {{ lang_label }}
+                {% endif %}
+              </span>
+              {% endif %}
+            {% endfor %}
           </div>
-          {% endfor %}
         </div>
         {% endif %}
       {% endfor %}
@@ -343,29 +356,45 @@
 
         {% if section.type == "summary" %}
         <div class="section">
-          <div class="section-title">{{ section.title|default:"Summary" }}</div>
+          <table class="section-title-table" cellpadding="0" cellspacing="0">
+            <tr>
+              <td class="section-title-text">{% include "cvs/includes/pdf_section_title.inc" with section_type="summary" %}</td>
+              <td class="section-title-line-cell"><hr class="section-title-hr" /></td>
+            </tr>
+          </table>
           <div class="summary-text">{{ section.content|default:""|linebreaksbr }}</div>
         </div>
         {% endif %}
 
         {% if section.type == "experience" %}
         <div class="section">
-          <div class="section-title">{{ section.title|default:"Experience" }}</div>
+          <table class="section-title-table" cellpadding="0" cellspacing="0">
+            <tr>
+              <td class="section-title-text">{% include "cvs/includes/pdf_section_title.inc" with section_type="experience" %}</td>
+              <td class="section-title-line-cell"><hr class="section-title-hr" /></td>
+            </tr>
+          </table>
           {% for item in section.items %}
-          <div class="item">
+          <div class="entry">
+            {% if item.position or item.title or item.startDate or item.start or item.current or item.endDate or item.end %}
             <div class="item-header">
               <div class="item-header-left">
-                <div class="item-title">{{ item.position|default:"" }}</div>
+                <div class="item-title">{% firstof item.position item.title %}</div>
               </div>
+              {% if item.startDate or item.start or item.current or item.endDate or item.end %}
               <div class="item-header-right">
-                <div class="item-date">
+                <div class="item-date-pill">
                   {% if item.startDate %}{{ item.startDate }}{% elif item.start %}{{ item.start }}{% endif %}
                   {% if item.startDate or item.start %}{% if item.current or item.endDate or item.end %} — {% endif %}{% endif %}
                   {% if item.current %}{{ pdf_currently_working|default:"Present" }}{% else %}{% if item.endDate %}{{ item.endDate }}{% elif item.end %}{{ item.end }}{% endif %}{% endif %}
                 </div>
               </div>
+              {% endif %}
             </div>
-            <div class="item-subtitle">{{ item.company|default:"" }}{% if item.location %} · {{ item.location }}{% endif %}</div>
+            {% endif %}
+            {% if item.company or item.location %}
+            <div class="item-highlight-subtitle">{{ item.company|default:"" }}{% if item.location %} · {{ item.location }}{% endif %}</div>
+            {% endif %}
             {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
           </div>
           {% endfor %}
@@ -374,22 +403,33 @@
 
         {% if section.type == "education" %}
         <div class="section">
-          <div class="section-title">{{ section.title|default:"Education" }}</div>
+          <table class="section-title-table" cellpadding="0" cellspacing="0">
+            <tr>
+              <td class="section-title-text">{% include "cvs/includes/pdf_section_title.inc" with section_type="education" %}</td>
+              <td class="section-title-line-cell"><hr class="section-title-hr" /></td>
+            </tr>
+          </table>
           {% for item in section.items %}
-          <div class="item">
+          <div class="entry">
+            {% if item.school or item.startDate or item.start or item.endDate or item.end %}
             <div class="item-header">
               <div class="item-header-left">
-                <div class="item-degree">{{ item.degree|default:"" }}{% if item.field %} in {{ item.field }}{% endif %}{% if item.city or item.country %}{% if item.degree or item.field %} · {% endif %}{% if item.city %}{{ item.city }}{% endif %}{% if item.city and item.country %}, {% endif %}{% if item.country %}{{ item.country }}{% endif %}{% endif %}</div>
-                <div class="item-school">{{ item.school|default:"" }}</div>
+                {% if item.school %}<div class="item-title">{{ item.school }}</div>{% endif %}
               </div>
+              {% if item.startDate or item.start or item.endDate or item.end %}
               <div class="item-header-right">
-                <div class="item-date">
+                <div class="item-date-pill">
                   {% if item.startDate %}{{ item.startDate }}{% elif item.start %}{{ item.start }}{% endif %}
                   {% if item.startDate or item.start %}{% if item.endDate or item.end %} — {% endif %}{% endif %}
                   {% if item.endDate %}{{ item.endDate }}{% elif item.end %}{{ item.end }}{% endif %}
                 </div>
               </div>
+              {% endif %}
             </div>
+            {% endif %}
+            {% if item.degree or item.city or item.country %}
+            <div class="item-highlight-subtitle">{{ item.degree|default:"" }}{% if item.city or item.country %}{% if item.degree %} · {% endif %}{% if item.city %}{{ item.city }}{% endif %}{% if item.city and item.country %}, {% endif %}{% if item.country %}{{ item.country }}{% endif %}{% endif %}</div>
+            {% endif %}
             {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
           </div>
           {% endfor %}
@@ -398,16 +438,34 @@
 
         {% if section.type == "projects" %}
         <div class="section">
-          <div class="section-title">{{ section.title|default:"Projects" }}</div>
+          <table class="section-title-table" cellpadding="0" cellspacing="0">
+            <tr>
+              <td class="section-title-text">{% include "cvs/includes/pdf_section_title.inc" with section_type="projects" %}</td>
+              <td class="section-title-line-cell"><hr class="section-title-hr" /></td>
+            </tr>
+          </table>
           {% for item in section.items %}
-          <div class="item">
+          <div class="entry">
             <div class="item-header">
               <div class="item-header-left">
-                <div class="item-title">{{ item.name|default:"" }}</div>
+                <div class="item-title">{% firstof item.name item.title %}</div>
               </div>
-              {% if item.link or item.url %}
+              {% if item.date or item.link or item.url %}
               <div class="item-header-right">
-                <div class="item-date">{% if item.link %}{{ item.link }}{% else %}{{ item.url }}{% endif %}</div>
+                <div class="item-header-right-meta">
+                  {% if item.date %}
+                  <span class="item-date-pill item-date-pill--inline">{{ item.date }}</span>
+                  {% endif %}
+                  {% firstof item.link item.url as project_url %}
+                  {% if project_url %}
+                  <a href="{% if '://' in project_url %}{{ project_url }}{% else %}https://{{ project_url }}{% endif %}" class="item-project-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                  </a>
+                  {% endif %}
+                </div>
               </div>
               {% endif %}
             </div>
@@ -419,17 +477,21 @@
 
         {% if section.type == "certificates" %}
         <div class="section">
-          <div class="section-title">{{ section.title|default:"Certificates" }}</div>
+          <table class="section-title-table" cellpadding="0" cellspacing="0">
+            <tr>
+              <td class="section-title-text">{% include "cvs/includes/pdf_section_title.inc" with section_type="certificates" %}</td>
+              <td class="section-title-line-cell"><hr class="section-title-hr" /></td>
+            </tr>
+          </table>
           {% for item in section.items %}
-          <div class="cert-item">
+          <div class="entry">
             <div class="item-header">
               <div class="item-header-left">
                 <div class="item-title">{% if item.name %}{{ item.name }}{% elif item.title %}{{ item.title }}{% endif %}</div>
-                {% if item.issuer %}<div class="cert-issuer">{{ item.issuer }}</div>{% endif %}
               </div>
               {% if item.startDate or item.start or item.endDate or item.end or item.date %}
               <div class="item-header-right">
-                <div class="item-date">
+                <div class="item-date-pill">
                   {% if item.startDate %}{{ item.startDate }}{% elif item.start %}{{ item.start }}{% endif %}
                   {% if item.startDate or item.start %}{% if item.endDate or item.end or item.date %} — {% endif %}{% endif %}
                   {% if item.endDate %}{{ item.endDate }}{% elif item.end %}{{ item.end }}{% elif item.date %}{{ item.date }}{% endif %}
@@ -437,6 +499,10 @@
               </div>
               {% endif %}
             </div>
+            {% if item.issuer or item.organization %}
+            <div class="item-highlight-subtitle">{% firstof item.issuer item.organization %}</div>
+            {% endif %}
+            {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
           </div>
           {% endfor %}
         </div>

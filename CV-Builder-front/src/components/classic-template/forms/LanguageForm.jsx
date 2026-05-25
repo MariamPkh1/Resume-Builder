@@ -1,6 +1,7 @@
 import React from "react";
 import { Languages, Trash2, Plus, X, GripVertical } from "lucide-react";
 import { useLanguage } from "../../../context/LanguageContext";
+import { LANGUAGE_LEVEL_OPTIONS, canonicalLanguageLevel } from "../../../utils/languageLevels";
 
 const LanguageForm = ({ section, setResumeData, dragHandleProps, onDeleteSection }) => {
   const { t } = useLanguage();
@@ -15,8 +16,18 @@ const LanguageForm = ({ section, setResumeData, dragHandleProps, onDeleteSection
       ...prev,
       sections: prev.sections.map(s => {
         if (s.id !== section.id) return s;
-        return { ...s, items: s.items.map(item => item.id === itemId ? { ...item, [field]: value } : item) };
-      })
+        return {
+          ...s,
+          items: s.items.map((item) => {
+            if (item.id !== itemId) return item;
+            if (field === "level") {
+              const { proficiency, ...rest } = item;
+              return { ...rest, level: value };
+            }
+            return { ...item, [field]: value };
+          }),
+        };
+      }),
     }));
   };
 
@@ -72,14 +83,14 @@ const LanguageForm = ({ section, setResumeData, dragHandleProps, onDeleteSection
             />
             <select
               className="w-full min-w-0 shrink-0 p-2.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-all text-xs text-gray-600 cursor-pointer"
-              value={item.level || "Native"}
+              value={canonicalLanguageLevel(item.level || item.proficiency)}
               onChange={(e) => updateItem(item.id, "level", e.target.value)}
             >
-              <option>Native</option>
-              <option>Fluent</option>
-              <option>Professional</option>
-              <option>Intermediate</option>
-              <option>Basic</option>
+              {LANGUAGE_LEVEL_OPTIONS.map(({ value, key }) => (
+                <option key={value} value={value}>
+                  {t(key)}
+                </option>
+              ))}
             </select>
           </div>
         ))}

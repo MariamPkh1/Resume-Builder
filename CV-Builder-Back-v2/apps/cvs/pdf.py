@@ -66,10 +66,27 @@ def _file_to_data_url(path: Path):
     """Read a local file and return a base64 data URL."""
     mime, _ = mimetypes.guess_type(str(path))
     if not mime:
-        mime = "image/png"
+        mime = "image/svg+xml" if path.suffix.lower() == ".svg" else "image/png"
     data = path.read_bytes()
     b64 = base64.b64encode(data).decode("ascii")
     return f"data:{mime};base64,{b64}"
+
+
+_ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+_WATERMARK_LOGO_SVG = _ASSETS_DIR / "logo circle black bg.svg"
+_WATERMARK_LOGO_PATHS = (
+    _WATERMARK_LOGO_SVG,
+    _ASSETS_DIR / "nebula_watermark_logo_og.png",
+    _ASSETS_DIR / "nebula_watermark_logo.png",
+)
+
+
+def _watermark_logo_data_url():
+    """Embed the small Nebula circle logo for PDF watermarks."""
+    for path in _WATERMARK_LOGO_PATHS:
+        if path.exists():
+            return _file_to_data_url(path)
+    return None
 
 
 def _pdf_date_labels(language_code):
@@ -95,6 +112,9 @@ def render_cv_pdf(*, cv, watermark=False, template="classic", language=None):
         "pdf_currently_working": present_long,
     }
     context["pdf_language"] = (language or getattr(cv, "language", None) or "en").lower()
+
+    if watermark:
+        context["watermark_logo_url"] = _watermark_logo_data_url()
 
     # Photo is only used in europass-family templates.
     if is_europass:

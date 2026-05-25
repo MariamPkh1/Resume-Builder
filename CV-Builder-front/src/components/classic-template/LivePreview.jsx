@@ -4,6 +4,8 @@ import {
   GraduationCap, Code, FolderCode, Languages, Award, FileText, Link2
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { resolveLanguageLevel, translateLanguageLevel } from "../../utils/languageLevels";
+import { getResumeSectionTitle } from "../../utils/resumeSectionTitle";
 
 const LivePreview = ({ data, innerRef, zoom = 1 }) => {
   const { t } = useLanguage();
@@ -18,23 +20,6 @@ const LivePreview = ({ data, innerRef, zoom = 1 }) => {
       case "certificates": return <Award size={12} />;
       case "summary": return <FileText size={12} />;
       default: return null;
-    }
-  };
-
-  const getSectionTitle = (section) => {
-    // If user has typed a custom title, use it. Otherwise, use translation.
-    if (section.title && section.title.trim() !== "") return section.title;
-    
-    // Fallback to translated type names using your language context keys
-    switch (section.type) {
-      case "summary": return t("resume.summary");
-      case "experience": return t("resume.experience");
-      case "education": return t("resume.education");
-      case "skills": return t("resume.skills");
-      case "projects": return t("resume.projects");
-      case "languages": return t("resume.languages");
-      case "certificates": return t("resume.certificates");
-      default: return section.type;
     }
   };
 
@@ -90,7 +75,7 @@ const LivePreview = ({ data, innerRef, zoom = 1 }) => {
             <div key={s.id}>
               <h3 className="text-xs font-bold uppercase tracking-[0.2em] border-b border-gray-100 pb-1 mb-3 flex items-center gap-2 text-gray-800">
                 {getSectionIcon(s.type)}
-                {getSectionTitle(s)}
+                {getResumeSectionTitle(s, t)}
               </h3>
 
               {/* SUMMARY */}
@@ -188,14 +173,19 @@ const LivePreview = ({ data, innerRef, zoom = 1 }) => {
 
               {/* LANGUAGES */}
               {s.type === "languages" &&
-                s.items?.map((item, idx) => (
+                s.items?.map((item, idx) => {
+                  const lvl = resolveLanguageLevel(item);
+                  return (
                   <div key={idx} className="mb-2">
                     <div className="flex justify-between text-[11px]">
                       <span className="font-bold text-gray-800">{item.language || item.name}</span>
-                      <span className="text-gray-500 italic">{item.proficiency || item.level}</span>
+                      {lvl ? (
+                        <span className="text-gray-500 italic">{translateLanguageLevel(lvl, t)}</span>
+                      ) : null}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
 
               {/* CERTIFICATES */}
               {s.type === "certificates" &&

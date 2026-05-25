@@ -1,27 +1,44 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import logo3 from "../assets/logo3.svg";
+import { useLanguage } from "../context/LanguageContext";
 
 const Footer = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
-  const links = {
-    Product: [
-      { label: "Templates", path: "/templates" },
-      { label: "Pricing", path: "/pricing" },
-      { label: "Features", path: null },
-    ],
-    Company: [
-      { label: "About", path: null },
-      { label: "Blog", path: null },
-      { label: "Careers", path: null },
-    ],
-    Support: [
-      { label: "Help Center", path: null },
-      { label: "Contact", path: null },
-      { label: "Privacy Policy", path: null },
-    ],
-  };
+  const linkGroups = [
+    {
+      headingKey: "footer.product",
+      items: [
+        { labelKey: "nav.templates", path: "/templates" },
+        { labelKey: "nav.pricing", path: "/pricing" },
+        { labelKey: "footer.features", path: null },
+      ],
+    },
+    {
+      headingKey: "footer.company",
+      items: [
+        { labelKey: "footer.about", path: null },
+        { labelKey: "footer.blog", path: null },
+        { labelKey: "footer.careers", path: null },
+      ],
+    },
+    {
+      headingKey: "footer.support",
+      items: [
+        { labelKey: "footer.helpCenter", path: null },
+        { labelKey: "nav.contact", path: null },
+        { labelKey: "footer.privacyPolicy", path: null },
+      ],
+    },
+  ];
+
+  const bottomLinks = [
+    { labelKey: "footer.terms" },
+    { labelKey: "footer.privacy" },
+    { labelKey: "footer.cookies" },
+  ];
 
   return (
     <footer
@@ -80,7 +97,8 @@ const Footer = () => {
                 width: "auto",
                 display: "block",
                 objectFit: "contain",
-                objectPosition: "left center",
+                objectPosition: "left top",
+                marginTop: -16,
                 marginBottom: 12,
               }}
             />
@@ -93,13 +111,13 @@ const Footer = () => {
                 margin: 0,
               }}
             >
-              Build high-impact resumes in minutes with advanced AI. Beat ATS filters and land more interviews.
+              {t("footer.description")}
             </p>
           </div>
 
           {/* Link columns */}
-          {Object.entries(links).map(([heading, items]) => (
-            <div key={heading}>
+          {linkGroups.map(({ headingKey, items }) => (
+            <div key={headingKey}>
               <p
                 style={{
                   fontSize: 11,
@@ -111,11 +129,11 @@ const Footer = () => {
                   marginTop: 0,
                 }}
               >
-                {heading}
+                {t(headingKey)}
               </p>
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                {items.map(({ label, path }) => (
-                  <li key={label} style={{ marginBottom: 10 }}>
+                {items.map(({ labelKey, path }) => (
+                  <li key={labelKey} style={{ marginBottom: 10 }}>
                     <span
                       onClick={() => path && navigate(path)}
                       style={{
@@ -131,7 +149,7 @@ const Footer = () => {
                         e.target.style.color = "#64748b";
                       }}
                     >
-                      {label}
+                      {t(labelKey)}
                     </span>
                   </li>
                 ))}
@@ -161,12 +179,12 @@ const Footer = () => {
           }}
         >
           <p style={{ fontSize: 13, color: "#94a3b8", margin: 0 }}>
-            © {new Date().getFullYear()} NebulaAI. All rights reserved.
+            © {new Date().getFullYear()} {t("footer.copyright")}
           </p>
           <div style={{ display: "flex", gap: 24 }}>
-            {["Terms", "Privacy", "Cookies"].map((item) => (
+            {bottomLinks.map(({ labelKey }) => (
               <span
-                key={item}
+                key={labelKey}
                 style={{
                   fontSize: 13,
                   color: "#94a3b8",
@@ -176,7 +194,7 @@ const Footer = () => {
                 onMouseEnter={(e) => (e.target.style.color = "#0f172a")}
                 onMouseLeave={(e) => (e.target.style.color = "#94a3b8")}
               >
-                {item}
+                {t(labelKey)}
               </span>
             ))}
           </div>

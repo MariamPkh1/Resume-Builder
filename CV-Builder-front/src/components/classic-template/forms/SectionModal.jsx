@@ -16,7 +16,7 @@ const SECTION_BLUEPRINTS = {
   experience: { position: "", company: "", location: "", startDate: "", endDate: "", description: "", current: false },
   education: { degree: "", school: "", city: "", country: "", startDate: "", endDate: "", description: "" },
   skills: { name: "", level: "Intermediate" },
-  languages: { language: "", level: "B2" },
+  languages: { language: "", level: "Native" },
   projects: { name: "", link: "", date: "", description: "" },
   certificates: { name: "", issuer: "", startDate: "", endDate: "" },
   summary: { content: "" }

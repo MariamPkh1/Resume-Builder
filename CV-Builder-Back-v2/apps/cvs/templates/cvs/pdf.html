@@ -6,17 +6,6 @@
     {% include "cvs/includes/pdf_font_faces.inc" %}
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: "Noto Sans Georgian", "DejaVu Sans", sans-serif; font-size: 13px; color: #222; padding: 40px; }
-    .watermark {
-      position: fixed;
-      top: 45%;
-      left: 10%;
-      right: 10%;
-      text-align: center;
-      font-size: 48px;
-      opacity: 0.15;
-      transform: rotate(-20deg);
-      z-index: 0;
-    }
     .content { position: relative; z-index: 1; }
 
     /* Header */
@@ -49,8 +38,20 @@
     /* Experience / Education / Projects */
     .item { margin-bottom: 12px; }
     .item-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .item-header--project { align-items: center; }
     .item-title { font-weight: 700; font-size: 13px; color: #1e293b; }
     .item-date { font-size: 11px; color: #888; white-space: nowrap; }
+    .item-project-link {
+      flex-shrink: 0;
+      text-decoration: none;
+      line-height: 0;
+      margin-left: 8px;
+    }
+    .item-project-link svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
     .item-subtitle { font-size: 11px; color: #555; margin-top: 1px; }
     .item-description { font-size: 11px; color: #444; margin-top: 5px; line-height: 1.6; white-space: pre-line; }
 
@@ -75,9 +76,7 @@
   </style>
 </head>
 <body>
-  {% if watermark %}
-    <div class="watermark">Made with Nebula</div>
-  {% endif %}
+  {% include "cvs/includes/pdf_watermark.inc" %}
 
   {% with d=cv.cv_data %}
   <div class="content">
@@ -105,7 +104,7 @@
       <!-- SUMMARY -->
       {% if section.type == "summary" %}
       <div class="section">
-        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="summary" %}<span>{{ section.title|default:"Summary" }}</span></div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="summary" %}<span>{% include "cvs/includes/pdf_section_title.inc" with section_type="summary" %}</span></div>
         <div class="summary-text">{{ section.content|default:""|linebreaksbr }}</div>
       </div>
       {% endif %}
@@ -113,7 +112,7 @@
       <!-- EXPERIENCE -->
       {% if section.type == "experience" %}
       <div class="section">
-        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="experience" %}<span>{{ section.title|default:"Experience" }}</span></div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="experience" %}<span>{% include "cvs/includes/pdf_section_title.inc" with section_type="experience" %}</span></div>
         {% for item in section.items %}
         <div class="item">
           <div class="item-header">
@@ -134,7 +133,7 @@
       <!-- EDUCATION -->
       {% if section.type == "education" %}
       <div class="section">
-        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="education" %}<span>{{ section.title|default:"Education" }}</span></div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="education" %}<span>{% include "cvs/includes/pdf_section_title.inc" with section_type="education" %}</span></div>
         {% for item in section.items %}
         <div class="item">
           <div class="item-header">
@@ -155,7 +154,7 @@
       <!-- SKILLS -->
       {% if section.type == "skills" %}
       <div class="section">
-        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="skills" %}<span>{{ section.title|default:"Skills" }}</span></div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="skills" %}<span>{% include "cvs/includes/pdf_section_title.inc" with section_type="skills" %}</span></div>
         <div class="skills-list">
           {% for item in section.items %}
             {% with name=item.name|default:item %}
@@ -169,12 +168,20 @@
       <!-- PROJECTS -->
       {% if section.type == "projects" %}
       <div class="section">
-        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="projects" %}<span>{{ section.title|default:"Projects" }}</span></div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="projects" %}<span>{% include "cvs/includes/pdf_section_title.inc" with section_type="projects" %}</span></div>
         {% for item in section.items %}
         <div class="item">
-          <div class="item-header">
-            <div class="item-title">{% if item.name %}{{ item.name }}{% elif item.title %}{{ item.title }}{% endif %}</div>
-            {% if item.link or item.url %}<div class="item-date">{% if item.link %}{{ item.link }}{% else %}{{ item.url }}{% endif %}</div>{% endif %}
+          <div class="item-header item-header--project">
+            <div class="item-title">{% firstof item.name item.title %}</div>
+            {% firstof item.link item.url as project_url %}
+            {% if project_url %}
+            <a href="{% if '://' in project_url %}{{ project_url }}{% else %}https://{{ project_url }}{% endif %}" class="item-project-link">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+            </a>
+            {% endif %}
           </div>
           {% if item.description %}<div class="item-description">{{ item.description }}</div>{% endif %}
         </div>
@@ -185,11 +192,11 @@
       <!-- LANGUAGES -->
       {% if section.type == "languages" %}
       <div class="section">
-        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="languages" %}<span>{{ section.title|default:"Languages" }}</span></div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="languages" %}<span>{% include "cvs/includes/pdf_section_title.inc" with section_type="languages" %}</span></div>
         {% for item in section.items %}
         <div class="lang-item">
           <span>{% if item.language %}{{ item.language }}{% elif item.name %}{{ item.name }}{% endif %}</span>
-          <span class="lang-level">{% if item.level %}{{ item.level }}{% elif item.proficiency %}{{ item.proficiency }}{% endif %}</span>
+          <span class="lang-level">{% if item.level %}{% include "cvs/includes/pdf_lang_level.inc" with level=item.level %}{% elif item.proficiency %}{% include "cvs/includes/pdf_lang_level.inc" with level=item.proficiency %}{% endif %}</span>
         </div>
         {% endfor %}
       </div>
@@ -198,7 +205,7 @@
       <!-- CERTIFICATES -->
       {% if section.type == "certificates" %}
       <div class="section">
-        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="certificates" %}<span>{{ section.title|default:"Certificates" }}</span></div>
+        <div class="section-title">{% include "cvs/includes/pdf_section_icon.inc" with section_type="certificates" %}<span>{% include "cvs/includes/pdf_section_title.inc" with section_type="certificates" %}</span></div>
         {% for item in section.items %}
         <div class="cert-item">
           <div class="item-header">

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link2 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { resolveLanguageLevel, translateLanguageLevel } from "../../utils/languageLevels";
+import { getResumeSectionTitle } from "../../utils/resumeSectionTitle";
 
 const EuropassPreview = ({ data }) => {
   const { t } = useLanguage();
@@ -8,23 +10,6 @@ const EuropassPreview = ({ data }) => {
   // Standardizing keys to match Django Serializer & fallback
   const personalInfo = data?.personalInfo || data?.personal_info || {};
   const sections = data?.sections || [];
-
-  const getSectionTitle = (section) => {
-    // 1. If user typed a custom title, use it
-    if (section.title && section.title.trim() !== "") return section.title;
-    
-    // 2. Fallback to translated type names from your context
-    switch (section.type) {
-      case "summary": return t("resume.summary");
-      case "experience": return t("resume.experience");
-      case "education": return t("resume.education");
-      case "skills": return t("resume.skills");
-      case "projects": return t("resume.projects");
-      case "languages": return t("resume.languages");
-      case "certificates": return t("resume.certificates");
-      default: return section.type;
-    }
-  };
 
   // Helper for "Present" date localization
   const getPresentText = () => {
@@ -63,14 +48,26 @@ const EuropassPreview = ({ data }) => {
           {sections.filter(s => s.type === 'skills' || s.type === 'languages').map(section => (
             <section key={section.id}>
               <h2 className="text-[10px] uppercase tracking-[2px] font-bold text-blue-300 mb-4 border-b border-blue-300/20 pb-1">
-                {getSectionTitle(section)}
+                {getResumeSectionTitle(section, t)}
               </h2>
               <div className="flex flex-wrap gap-2">
-                {section.items?.map((item, i) => (
-                  <span key={i} className="bg-white/10 px-2 py-1 rounded text-[9px] border border-white/5">
-                    {item.name || item.language} {item.level || item.proficiency ? `(${item.level || item.proficiency})` : ''}
-                  </span>
-                ))}
+                {section.items?.map((item, i) => {
+                  if (section.type === "skills") {
+                    return (
+                      <span key={i} className="bg-white/10 px-2 py-1 rounded text-[9px] border border-white/5">
+                        {item.name || ""}
+                      </span>
+                    );
+                  }
+                  const lvl = resolveLanguageLevel(item);
+                  const label = item.name || item.language || "";
+                  const text = lvl ? `${label} (${translateLanguageLevel(lvl, t)})` : label;
+                  return (
+                    <span key={i} className="bg-white/10 px-2 py-1 rounded text-[9px] border border-white/5">
+                      {text}
+                    </span>
+                  );
+                })}
               </div>
             </section>
           ))}
@@ -99,7 +96,7 @@ const EuropassPreview = ({ data }) => {
             return (
             <section key={section.id}>
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[3px] mb-6 flex items-center gap-4">
-                {getSectionTitle(section)}
+                {getResumeSectionTitle(section, t)}
                 <div className="flex-1 h-[1px] bg-slate-100"></div>
               </h3>
 
