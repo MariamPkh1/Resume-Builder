@@ -29,7 +29,7 @@ const NavBar = () => {
     setLanguage(lang);
   };
 
-  const isProMember = user?.subscription_tier === "pro" || 
+  const isProMember = ["pro", "professional"].includes(user?.subscription_tier) ||
     (user?.trial_end_date && new Date(user.trial_end_date) > new Date());
 
   const navLinks = [
