@@ -110,7 +110,7 @@ const NavBar = () => {
                 >
                   <Zap size={12} className={isProMember ? "fill-blue-500 text-blue-500" : ""} />
                   <span className="text-[9px] font-black uppercase tracking-widest">
-                    {isProMember ? "Pro" : "Free"}
+                    {user?.subscription_tier === "professional" ? "Professional" : isProMember ? "Pro" : "Free"}
                   </span>
                 </div>
 
