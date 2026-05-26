@@ -317,6 +317,8 @@ class CheckATSAPIView(APIView):
             ai_result = check_ats_with_openai(
                 cv=cv,
                 job_description=data.get("job_description", ""),
+                target_role=data.get("target_role", ""),
+                industry=data.get("industry", ""),
                 language_code=lang_code,
                 target_language=target_language,
             )

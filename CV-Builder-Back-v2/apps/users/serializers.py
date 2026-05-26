@@ -100,9 +100,18 @@ class MeSerializer(serializers.ModelSerializer):
         return _is_trial_eligible(obj)
 
     def get_limits(self, obj):
+        from apps.ai.quotas import get_ai_quota_status
         from apps.users.limits import limits_for_user, user_at_cv_limit
 
         l = limits_for_user(obj)
+        ats_quota = get_ai_quota_status(obj, "check_ats")
+        ats_limit = ats_quota["limit"]
+        ats_used = ats_quota["used"]
+        if ats_limit == -1:
+            ats_remaining = -1
+        else:
+            ats_remaining = max(ats_limit - ats_used, 0)
+
         return {
             "max_cvs": l.max_cvs,
             "max_versions": l.max_versions,
@@ -110,6 +119,15 @@ class MeSerializer(serializers.ModelSerializer):
             "max_storage_bytes": l.max_storage_bytes,
             "cv_slots_used": obj.cv_slots_used,
             "at_cv_limit": user_at_cv_limit(obj),
+            "ats_checks": {
+                "used": ats_used,
+                "limit": ats_limit,
+                "remaining": ats_remaining,
+                "window": ats_quota["window"],
+                "allowed": ats_quota["allowed"],
+            },
+            "ats_checks_used": ats_used,
+            "ats_checks_limit": ats_limit,
         }
 
 

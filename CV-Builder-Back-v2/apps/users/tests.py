@@ -163,6 +163,32 @@ class AuthAPITests(APITestCase):
         self.assertEqual(response.data["preferred_language"], "ka")
         self.assertIn("limits", response.data)
         self.assertEqual(response.data["effective_tier"], "free")
+        self.assertIn("ats_checks", response.data["limits"])
+        self.assertEqual(response.data["limits"]["ats_checks"]["limit"], 0)
+
+    def test_me_includes_unlimited_ats_quota_for_professional(self):
+        user = self.create_verified_user(subscription_tier="professional")
+        self.authenticate(user)
+
+        response = self.client.get("/api/auth/me/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ats = response.data["limits"]["ats_checks"]
+        self.assertEqual(ats["limit"], -1)
+        self.assertEqual(ats["remaining"], -1)
+        self.assertTrue(ats["allowed"])
+
+    def test_me_includes_monthly_ats_quota_for_pro(self):
+        user = self.create_verified_user(subscription_tier="pro")
+        self.authenticate(user)
+
+        response = self.client.get("/api/auth/me/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ats = response.data["limits"]["ats_checks"]
+        self.assertEqual(ats["limit"], 20)
+        self.assertEqual(ats["used"], 0)
+        self.assertEqual(ats["remaining"], 20)
 
     def test_profile_alias_returns_same_user_details(self):
         user = self.create_verified_user(preferred_language="ka")

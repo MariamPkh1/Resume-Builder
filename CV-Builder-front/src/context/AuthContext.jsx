@@ -149,14 +149,28 @@ export const AuthProvider = ({ children }) => {
     return days > 0 ? days : 0;
   };
 
-  // Derive AI limits from MeSerializer: limits { max_cvs, max_versions, max_pdfs_per_month, max_storage_bytes }
-  // ai_analysis_used at user level = AI features used (ATS, analyze, improve, tailor). Pro limit 20.
   const limitsObj = u?.limits ?? {};
-  const aiAnalysisUsed = Number(u?.ai_analysis_used) || 0;
-  const atsChecksUsed = limitsObj.ats_checks_used ?? limitsObj.ats_checks?.used ?? aiAnalysisUsed;
-  const atsChecksLimit = limitsObj.ats_checks_limit ?? limitsObj.ats_checks?.limit ?? 20;
-
   const effectiveTier = u?.effective_tier || u?.subscription_tier || tier;
+
+  const atsChecks = limitsObj.ats_checks ?? {};
+  const atsChecksUsed = Number(atsChecks.used ?? limitsObj.ats_checks_used ?? 0) || 0;
+  const atsChecksLimitRaw = atsChecks.limit ?? limitsObj.ats_checks_limit;
+  const atsChecksLimit =
+    typeof atsChecksLimitRaw === "number"
+      ? atsChecksLimitRaw
+      : effectiveTier === "professional"
+        ? -1
+        : effectiveTier === "pro" || isTrialActive
+          ? 20
+          : 0;
+  const atsUnlimited = atsChecksLimit === -1;
+  const atsChecksRemaining = atsUnlimited
+    ? -1
+    : Math.max(
+        atsChecks.remaining ??
+          (typeof atsChecksLimit === "number" ? atsChecksLimit - atsChecksUsed : 0),
+        0
+      );
   const cvSlotsUsed = Number(limitsObj.cv_slots_used) || 0;
   const maxCvsFromApi = limitsObj.max_cvs;
   const maxCvs =
@@ -194,8 +208,10 @@ export const AuthProvider = ({ children }) => {
         atCvLimit,
         canCreateResume,
         limits: {
-          atsChecksUsed: Number(atsChecksUsed) || 0,
-          atsChecksLimit: Number(atsChecksLimit) || 20,
+          atsChecksUsed,
+          atsChecksLimit,
+          atsChecksRemaining,
+          atsUnlimited,
         },
       }}
     >

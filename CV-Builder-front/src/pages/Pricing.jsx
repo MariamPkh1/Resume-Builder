@@ -28,9 +28,7 @@ const buildPlans = (t) => [
       { text: t("pricing.free.f6"),  included: false },
       { text: t("pricing.free.f7"),  included: false },
       { text: t("pricing.free.f8"),  included: false },
-      { text: t("pricing.free.f9"),  included: false },
-      { text: t("pricing.free.f10"), included: false },
-      { text: t("pricing.free.f11"), included: true  },
+      { text: t("pricing.free.f9"),  included: true  },
     ],
   },
   {
@@ -63,8 +61,6 @@ const buildPlans = (t) => [
       { text: t("pricing.proMonthly.f7"),  included: true },
       { text: t("pricing.proMonthly.f8"),  included: true },
       { text: t("pricing.proMonthly.f9"),  included: true },
-      { text: t("pricing.proMonthly.f10"), included: true },
-      { text: t("pricing.proMonthly.f11"), included: true },
     ],
   },
   {
@@ -87,8 +83,6 @@ const buildPlans = (t) => [
       { text: t("pricing.professional.f7"),  included: true },
       { text: t("pricing.professional.f8"),  included: true },
       { text: t("pricing.professional.f9"),  included: true },
-      { text: t("pricing.professional.f10"), included: true },
-      { text: t("pricing.professional.f11"), included: true },
     ],
   },
 ];

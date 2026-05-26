@@ -2,6 +2,13 @@ import json
 from django.conf import settings
 from openai import OpenAI
 
+from .ats_cv import (
+    build_ats_cv_snapshot,
+    build_ats_job_description,
+    collect_ats_facts,
+    filter_ats_false_positives,
+)
+
 
 def _safe_json_loads(text: str):
     try:
@@ -215,6 +222,8 @@ job_description:
 def check_ats_with_openai(
     cv,
     job_description: str = "",
+    target_role: str = "",
+    industry: str = "",
     language_code: str = "en",
     target_language: str = "English",
 ) -> dict:
@@ -239,13 +248,13 @@ def check_ats_with_openai(
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     model = getattr(settings, "OPENAI_MODEL", "gpt-4o-mini")
 
-    cv_payload = {
-        "title": cv.title,
-        "language": cv.language,
-        "template": cv.template,
-        "cv_data": cv.cv_data,
-        "section_order": cv.section_order,
-    }
+    snapshot = build_ats_cv_snapshot(cv)
+    facts = collect_ats_facts(snapshot)
+    job_context = build_ats_job_description(
+        job_description=job_description,
+        target_role=target_role,
+        industry=industry,
+    )
 
     prompt = f"""
 You are an ATS (Applicant Tracking System) CV reviewer.
@@ -259,11 +268,19 @@ Analyze the CV for ATS-friendliness and return STRICT JSON only with this exact 
   "section_recommendations": ["...", "..."]
 }}
 
+CV schema (normalized for this analysis):
+- sections[].type: summary | experience | education | skills | projects | languages | certificates
+- summary: sections where type is "summary" use "content" (plain text, may be non-empty)
+- experience items: "title", "company", "start", "end" (end may be "Present" when current is true), "description"
+- skills: sections where type is "skills" use "skills": ["name", ...]
+- Do NOT report a section as empty if verified_facts or the CV data shows it has content.
+- Do NOT report missing experience dates if an item has "start" and ("end" or current role with end "Present").
+
 Rules:
 - Be specific and practical.
 - Focus on ATS parsing/readability, keywords, section naming, and missing content.
-- If a job_description is provided, compare the CV against it and identify keyword gaps.
-- Do not invent facts.
+- Compare the CV against the job context below and identify keyword gaps when a target role is given.
+- Do not invent facts. Only flag missing content that is actually absent in the CV JSON.
 - The response values (all feedback and bullet points) must be entirely in {target_language}.
 - Keep JSON keys in English.
 - If the target language is Georgian, use natural professional Georgian terminology suitable for recruitment/CV analysis.
@@ -271,11 +288,14 @@ Rules:
 - No markdown fences.
 - Return valid JSON only.
 
-job_description:
-{job_description}
+verified_facts (computed from the CV — treat as ground truth):
+{json.dumps(facts, ensure_ascii=False)}
+
+job_context:
+{job_context}
 
 cv:
-{json.dumps(cv_payload, ensure_ascii=False)}
+{json.dumps(snapshot, ensure_ascii=False)}
 """.strip()
 
     response = client.responses.create(
@@ -296,6 +316,8 @@ cv:
             "format_recommendations": [],
             "section_recommendations": [],
         }
+    else:
+        parsed = filter_ats_false_positives(parsed, facts)
 
     usage = getattr(response, "usage", None)
     prompt_tokens = getattr(usage, "input_tokens", 0) if usage else 0

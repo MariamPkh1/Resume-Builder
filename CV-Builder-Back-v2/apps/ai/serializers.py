@@ -19,6 +19,8 @@ class CheckATSSerializer(serializers.Serializer):
     cv_id = serializers.UUIDField()
     language = ai_language_field()
     job_description = serializers.CharField(required=False, allow_blank=True, default="")
+    target_role = serializers.CharField(required=False, allow_blank=True, default="")
+    industry = serializers.CharField(required=False, allow_blank=True, default="")
 
 class TailorForJobSerializer(serializers.Serializer):
     cv_id = serializers.UUIDField()

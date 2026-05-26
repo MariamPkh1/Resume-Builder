@@ -89,7 +89,9 @@ export const checkATSAPI = async ({
 
     const { data } = await api.post("/api/ai/check-ats/", {
       cv_id:           cvId,
-      job_description: jd || "General CV review",
+      job_description: jd || "",
+      target_role:     targetRole || "",
+      industry:        industry || "",
       language,
     });
     return { data, error: null };

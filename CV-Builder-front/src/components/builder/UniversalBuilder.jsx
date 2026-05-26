@@ -134,6 +134,27 @@ const UniversalBuilder = () => {
     [resumeData, resumeId, navigate, debouncedSave]
   );
 
+  /** Persist editor state immediately before ATS (avoids analyzing stale DB copy). */
+  const flushSaveBeforeATS = useCallback(async () => {
+    if (!resumeData || !resumeId) return;
+    debouncedSave.cancel();
+    setSaveStatus("saving");
+    try {
+      await api.patch(`/api/cvs/${resumeId}/`, {
+        title: resumeData.title || "Untitled Resume",
+        template,
+        language: resumeData.language || "en",
+        section_order: resumeData.section_order || [],
+        cv_data: resumeData.cv_data,
+      });
+      setSaveStatus("saved");
+    } catch (err) {
+      console.error("Save before ATS failed:", err);
+      setSaveStatus("error");
+      throw err;
+    }
+  }, [resumeData, resumeId, template, debouncedSave]);
+
   // ── 4. cv_data PARTIAL UPDATER ──
   const updateCvData = useCallback(
     (newDataPart) => {
@@ -305,18 +326,6 @@ const UniversalBuilder = () => {
       } else showToast({ message: "Export failed. Please try again." });
     } finally {
       setIsExporting(false);
-    }
-  };
-
-  // ── 9. ATS QUICK FIX ──
-  const handleATSQuickFix = (type, fixData) => {
-    if (type === "fix" && fixData.category === "headers") {
-      const updatedSections = sections.map((s) =>
-        s.title.toLowerCase().includes(fixData.issue.toLowerCase())
-          ? { ...s, title: fixData.solution.split("'")[1] || s.title }
-          : s
-      );
-      updateCvData({ sections: updatedSections });
     }
   };
 
@@ -611,7 +620,8 @@ const UniversalBuilder = () => {
           isPro={isPro}
           onClose={() => setShowATS(false)}
           onScoreUpdate={setAtsScore}
-          onQuickFix={handleATSQuickFix}
+          onBeforeCheck={flushSaveBeforeATS}
+          onChecksUpdated={refreshUser}
           checksUsed={limits?.atsChecksUsed ?? 0}
           checksLimit={limits?.atsChecksLimit ?? 20}
         />

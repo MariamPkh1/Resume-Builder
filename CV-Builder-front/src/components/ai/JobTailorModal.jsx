@@ -9,7 +9,24 @@ import { tailorForJobAPI } from "../../services/aiService";
  * Backend returns: result { tailored_summary, keyword_targets, section_suggestions, priority_actions }
  * Builds: changes, missing_keywords, recommendations, tailored_cv_data (for Apply)
  */
-const mapTailorResultToUI = (data, cvData) => {
+const SECTION_LABEL_KEYS = {
+  summary: "resume.summary",
+  experience: "resume.experience",
+  education: "resume.education",
+  skills: "resume.skills",
+  projects: "resume.projects",
+  languages: "resume.languages",
+  certificates: "resume.certificates",
+};
+
+const getSectionLabel = (section, trans) => {
+  const key = SECTION_LABEL_KEYS[section?.type ?? section?.section];
+  if (key) return trans(key);
+  const raw = section?.title ?? section?.section ?? section?.type ?? "";
+  return typeof raw === "string" ? raw.replace(/_/g, " ") : "";
+};
+
+const mapTailorResultToUI = (data, cvData, trans) => {
   if (data?.tailored_cv) return data.tailored_cv;
   const r = data?.result ?? {};
   const keywordTargets = Array.isArray(r.keyword_targets) ? r.keyword_targets : [];
@@ -27,9 +44,13 @@ const mapTailorResultToUI = (data, cvData) => {
         : (Array.isArray(section.items) ? section.items.map((i) => i.description).filter(Boolean).join("\n\n") : "");
       changes.push({
         section: section.type,
-        original: original || "(empty)",
+        sectionTitle: getSectionLabel(section, trans),
+        original: original || trans("tailor.empty"),
         updated,
-        reason: `AI suggestion for ${section.title ?? section.type}`,
+        reason: trans("tailor.aiSuggestionFor").replace(
+          "{section}",
+          section.title ?? getSectionLabel(section, trans)
+        ),
       });
     }
   }
@@ -37,9 +58,10 @@ const mapTailorResultToUI = (data, cvData) => {
     const summarySec = sections.find((s) => s.type === "summary");
     changes.unshift({
       section: "summary",
-      original: summarySec?.content ?? "(empty)",
+      sectionTitle: trans("resume.summary"),
+      original: summarySec?.content ?? trans("tailor.empty"),
       updated: tailoredSummary,
-      reason: "Tailored summary for job",
+      reason: trans("tailor.tailoredSummaryReason"),
     });
   }
 
@@ -98,13 +120,13 @@ const mapTailorResultToUI = (data, cvData) => {
  */
 
 // ─── Match score badge ────────────────────────────────────────────────────────
-const MatchScore = ({ score }) => {
+const MatchScore = ({ score, trans }) => {
   const { textColor, bg, border, label } =
     score >= 80
-      ? { textColor: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", label: "Strong match" }
+      ? { textColor: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", label: trans("tailor.strongMatch") }
       : score >= 60
-      ? { textColor: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200",   label: "Decent match" }
-      : { textColor: "text-red-600",     bg: "bg-red-50",     border: "border-red-200",     label: "Weak match"   };
+      ? { textColor: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200",   label: trans("tailor.decentMatch") }
+      : { textColor: "text-red-600",     bg: "bg-red-50",     border: "border-red-200",     label: trans("tailor.weakMatch")   };
 
   return (
     <div className={`flex items-center gap-4 p-5 rounded-2xl border ${bg} ${border}`}>
@@ -122,7 +144,7 @@ const MatchScore = ({ score }) => {
           />
         </div>
         <p className="text-[11px] text-gray-500 mt-1.5">
-          Your CV matched {score}% of the job requirements
+          {trans("tailor.matchedCvPercent").replace("{score}", String(score))}
         </p>
       </div>
     </div>
@@ -130,8 +152,13 @@ const MatchScore = ({ score }) => {
 };
 
 // ─── Change card (expandable) ─────────────────────────────────────────────────
-const ChangeCard = ({ change }) => {
+const ChangeCard = ({ change, trans }) => {
   const [open, setOpen] = useState(false);
+  const sectionLabel =
+    change.sectionTitle ??
+    (SECTION_LABEL_KEYS[change.section]
+      ? trans(SECTION_LABEL_KEYS[change.section])
+      : change.section?.replace(/_/g, " "));
   return (
     <div className="border border-gray-100 rounded-2xl overflow-hidden">
       <button
@@ -140,7 +167,7 @@ const ChangeCard = ({ change }) => {
       >
         <div>
           <p className="text-xs font-bold text-gray-700 capitalize">
-            {change.section?.replace(/_/g, " ")}
+            {sectionLabel}
           </p>
           {change.reason && (
             <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{change.reason}</p>
@@ -154,13 +181,13 @@ const ChangeCard = ({ change }) => {
       {open && (
         <div className="p-4 space-y-3 border-t border-gray-100">
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1.5">Original</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1.5">{trans("tailor.original")}</p>
             <p className="text-xs text-gray-500 bg-gray-50 rounded-xl p-3 leading-relaxed">
               {change.original}
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1.5">Updated</p>
+            <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1.5">{trans("tailor.updated")}</p>
             <p className="text-xs text-gray-800 bg-emerald-50 rounded-xl p-3 leading-relaxed">
               {change.updated}
             </p>
@@ -225,7 +252,7 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored, isPro = true }
       return;
     }
 
-    const mapped = mapTailorResultToUI(data, cvData);
+    const mapped = mapTailorResultToUI(data, cvData, trans);
     setResult(mapped);
     setStep(STEP_RESULTS);
   };
@@ -330,7 +357,12 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored, isPro = true }
               <p className="text-base font-black text-gray-900">{trans("tailor.title")}</p>
               {step === STEP_RESULTS && t && (
                 <p className="text-[11px] text-gray-400">
-                  {t.changes?.length ?? 0} section{t.changes?.length !== 1 ? "s" : ""} updated
+                  {(t.changes?.length ?? 0) === 1
+                    ? trans("tailor.oneSectionUpdated")
+                    : trans("tailor.sectionsUpdatedCount").replace(
+                        "{count}",
+                        String(t.changes?.length ?? 0)
+                      )}
                 </p>
               )}
             </div>
@@ -408,14 +440,14 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored, isPro = true }
           {step === STEP_RESULTS && t && (
             <div className="space-y-5">
 
-              <MatchScore score={t.match_score} />
+              <MatchScore score={t.match_score} trans={trans} />
 
               {/* Keyword stats grid */}
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { label: "Matched",  value: t.keywords_matched,            color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
-                  { label: "Total",    value: t.keywords_total,              color: "text-gray-700",    bg: "bg-gray-50 border-gray-100"       },
-                  { label: "Missing",  value: t.missing_keywords?.length ?? 0, color: "text-amber-600", bg: "bg-amber-50 border-amber-100"     },
+                  { label: trans("tailor.matched"),  value: t.keywords_matched,            color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
+                  { label: trans("tailor.total"),    value: t.keywords_total,              color: "text-gray-700",    bg: "bg-gray-50 border-gray-100"       },
+                  { label: trans("tailor.missing"),  value: t.missing_keywords?.length ?? 0, color: "text-amber-600", bg: "bg-amber-50 border-amber-100"     },
                 ].map(({ label, value, color, bg }) => (
                   <div key={label} className={`p-3 rounded-2xl border ${bg} text-center`}>
                     <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -428,7 +460,7 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored, isPro = true }
               {t.missing_keywords?.length > 0 && (
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                    Consider adding these keywords
+                    {trans("tailor.considerKeywords")}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {t.missing_keywords.map((kw) => (
@@ -444,10 +476,15 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored, isPro = true }
               {t.changes?.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                    {t.changes.length} Section{t.changes.length !== 1 ? "s" : ""} Updated
+                    {t.changes.length === 1
+                      ? trans("tailor.oneSectionUpdatedHeader")
+                      : trans("tailor.sectionsUpdatedHeader").replace(
+                          "{count}",
+                          String(t.changes.length)
+                        )}
                   </p>
                   {t.changes.map((change, i) => (
-                    <ChangeCard key={i} change={change} />
+                    <ChangeCard key={i} change={change} trans={trans} />
                   ))}
                 </div>
               )}
@@ -456,7 +493,7 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored, isPro = true }
               {t.recommendations?.length > 0 && (
                 <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl space-y-2">
                   <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
-                    Recommendations
+                    {trans("tailor.recommendations")}
                   </p>
                   {t.recommendations.map((rec, i) => (
                     <p key={i} className="text-xs text-blue-700 flex gap-2">
@@ -489,12 +526,12 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored, isPro = true }
                 disabled={!result?.tailored_cv_data}
                 className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Check size={15} /> Apply Changes
+                <Check size={15} /> {trans("tailor.applyChanges")}
               </button>
               <button
                 onClick={handleRetry}
                 className="w-12 flex items-center justify-center rounded-2xl border border-gray-200 text-gray-400 hover:bg-gray-50 transition-all"
-                title="Try again"
+                title={trans("tailor.tryAgain")}
               >
                 <RotateCcw size={15} />
               </button>
@@ -502,7 +539,7 @@ const JobTailorModal = ({ cvId, cvData, onClose, onApplyTailored, isPro = true }
                 onClick={onClose}
                 className="flex-1 py-3.5 rounded-2xl border border-gray-200 text-gray-500 text-sm font-semibold hover:bg-gray-50 transition-all"
               >
-                Discard
+                {trans("tailor.discard")}
               </button>
             </div>
           )}
