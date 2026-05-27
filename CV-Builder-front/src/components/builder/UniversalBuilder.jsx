@@ -634,11 +634,18 @@ const UniversalBuilder = () => {
           isPro={isPro}
           onClose={() => setShowJobTailor(false)}
           onApplyTailored={(tailoredData) => {
-            if (!tailoredData?.sections) return;
-            updateResume({
-              ...resumeData,
-              section_order: tailoredData.sections.map((s) => s.id),
-              cv_data: tailoredData,
+            if (!Array.isArray(tailoredData?.sections)) return;
+            debouncedSave.cancel();
+            setResumeData((prev) => {
+              if (!prev) return prev;
+              const updated = {
+                ...prev,
+                section_order: tailoredData.sections.map((s) => s.id),
+                cv_data: tailoredData,
+              };
+              setSaveStatus("editing");
+              debouncedSave(updated, resumeId, template);
+              return updated;
             });
           }}
         />

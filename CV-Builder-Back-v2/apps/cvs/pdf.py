@@ -98,7 +98,7 @@ def _pdf_date_labels(language_code):
 
 
 def render_cv_pdf(*, cv, watermark=False, template="classic", language=None):
-    from weasyprint import HTML
+    from weasyprint import CSS, HTML
 
     europass_templates = ["europass", "modern"]
     is_europass = template in europass_templates
@@ -136,7 +136,8 @@ def render_cv_pdf(*, cv, watermark=False, template="classic", language=None):
         context["photo_shape"] = personal_info.get("photoShape") or "rounded-2xl"
 
     html_string = render_to_string(template_name, context)
-    return HTML(string=html_string).write_pdf()
+    page_css = CSS(string="@page { size: A4; margin: 0; }")
+    return HTML(string=html_string).write_pdf(stylesheets=[page_css])
 
 
 def check_pdf_engine():

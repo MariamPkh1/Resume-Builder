@@ -18,25 +18,25 @@ const EuropassPreview = ({ data }) => {
   };
 
   return (
-    <div className="w-[210mm] min-h-[297mm] bg-white flex font-sans text-slate-800 leading-relaxed shadow-2xl">
+    <div className="w-[210mm] min-h-[297mm] bg-white flex font-sans text-slate-800 leading-normal shadow-2xl">
       
 {/* SIDEBAR */}
-      <div className="w-[32%] bg-[#37474f] text-white p-8">
+      <div className="w-[32%] bg-[#37474f] text-white p-7">
         {personalInfo?.photo && (
           /* FIX: Logic updated to check for 'rounded-full' and use ternary for Tailwind compiler safety */
-          <div className={`w-full aspect-square overflow-hidden mb-8 border-4 border-white/10 shadow-lg transition-all duration-500 ease-in-out ${
+          <div className={`w-full aspect-square overflow-hidden mb-6 border-4 border-white/10 shadow-lg transition-all duration-500 ease-in-out ${
             personalInfo.photoShape === 'rounded-full' ? 'rounded-full' : 'rounded-2xl'
           }`}>
             <img src={personalInfo.photo} className="w-full h-full object-cover" alt="Profile" />
           </div>
         )}
         
-        <div className="space-y-8">
+        <div className="space-y-6">
           <section>
-            <h2 className="text-[10px] uppercase tracking-[2px] font-bold text-blue-300 mb-4 border-b border-blue-300/20 pb-1">
+            <h2 className="text-[9px] uppercase tracking-[1.5px] font-semibold text-blue-300 mb-3 border-b border-blue-300/20 pb-1">
               {t("resume.personalInfo")}
             </h2>
-            <div className="space-y-3 text-[11px] opacity-90">
+            <div className="space-y-2 text-[10px] opacity-90 leading-snug">
               {personalInfo?.email && <p><strong>{t("form.email")}:</strong> {personalInfo.email}</p>}
               {personalInfo?.phone && <p><strong>{t("form.phone")}:</strong> {personalInfo.phone}</p>}
               {personalInfo?.location && <p><strong>{t("form.location")}:</strong> {personalInfo.location}</p>}
@@ -47,14 +47,14 @@ const EuropassPreview = ({ data }) => {
           {/* Sidebar Sections: Skills & Languages */}
           {sections.filter(s => s.type === 'skills' || s.type === 'languages').map(section => (
             <section key={section.id}>
-              <h2 className="text-[10px] uppercase tracking-[2px] font-bold text-blue-300 mb-4 border-b border-blue-300/20 pb-1">
+              <h2 className="text-[9px] uppercase tracking-[1.5px] font-semibold text-blue-300 mb-3 border-b border-blue-300/20 pb-1">
                 {getResumeSectionTitle(section, t)}
               </h2>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {section.items?.map((item, i) => {
                   if (section.type === "skills") {
                     return (
-                      <span key={i} className="bg-white/10 px-2 py-1 rounded text-[9px] border border-white/5">
+                      <span key={i} className="bg-white/10 px-1.5 py-0.5 rounded text-[8px] border border-white/5 leading-snug">
                         {item.name || ""}
                       </span>
                     );
@@ -63,7 +63,7 @@ const EuropassPreview = ({ data }) => {
                   const label = item.name || item.language || "";
                   const text = lvl ? `${label} (${translateLanguageLevel(lvl, t)})` : label;
                   return (
-                    <span key={i} className="bg-white/10 px-2 py-1 rounded text-[9px] border border-white/5">
+                    <span key={i} className="bg-white/10 px-1.5 py-0.5 rounded text-[8px] border border-white/5 leading-snug">
                       {text}
                     </span>
                   );
@@ -75,39 +75,39 @@ const EuropassPreview = ({ data }) => {
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="flex-1 p-12 bg-white text-left">
-        <header className="mb-12">
-          <h1 className="text-4xl font-light text-slate-900 mb-2">
+      <div className="flex-1 p-10 bg-white text-left">
+        <header className="mb-8">
+          <h1 className="text-[28px] font-light text-slate-900 mb-1 leading-tight">
             {personalInfo?.fullName?.split(' ')[0] || ""}{" "}
-            <span className="font-bold">
+            <span className="font-semibold">
               {personalInfo?.fullName?.split(' ').slice(1).join(' ') || ""}
             </span>
           </h1>
-          <p className="text-xl text-blue-600 font-medium">
+          <p className="text-[15px] text-blue-600 font-normal">
             {personalInfo?.jobTitle || ""}
           </p>
         </header>
 
-        <div className="space-y-10">
+        <div className="space-y-7">
           {/* Main Body Sections: Summary, Experience, Education, Projects, Certs */}
           {sections.filter(s => s.type !== 'skills' && s.type !== 'languages').map((section) => {
             const kind = (section.type || "").toLowerCase();
 
             return (
             <section key={section.id}>
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[3px] mb-6 flex items-center gap-4">
+              <h3 className="text-[10px] font-semibold text-slate-400 uppercase tracking-[2px] mb-4 flex items-center gap-3">
                 {getResumeSectionTitle(section, t)}
                 <div className="flex-1 h-[1px] bg-slate-100"></div>
               </h3>
 
               {kind === "summary" && (
-                <p className="text-[12px] text-slate-600 italic whitespace-pre-line mb-4">
+                <p className="text-[10.5px] text-slate-600 leading-snug whitespace-pre-line mb-2">
                   {section.content || section.description}
                 </p>
               )}
 
               {kind === "projects" && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {(section.items || []).map((item, i) => {
                     const projectUrl = String(item.link || item.url || "").trim();
                     const href =
@@ -116,13 +116,13 @@ const EuropassPreview = ({ data }) => {
                     const dateLabel = String(item.date || "").trim();
                     return (
                       <div key={item.id ?? i}>
-                        <div className="flex justify-between items-center mb-1 gap-2">
-                          <h4 className="font-bold text-slate-800 text-[14px] min-w-0 flex-1">
+                        <div className="flex justify-between items-center mb-0.5 gap-2">
+                          <h4 className="font-semibold text-slate-800 text-[12px] min-w-0 flex-1 leading-snug">
                             {item.name || item.title}
                           </h4>
                           <div className="flex items-center gap-2 shrink-0">
                             {dateLabel ? (
-                              <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded max-w-[11rem] text-right leading-snug">
+                              <span className="text-[8px] font-medium text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded max-w-[11rem] text-right leading-snug">
                                 {dateLabel}
                               </span>
                             ) : null}
@@ -131,16 +131,16 @@ const EuropassPreview = ({ data }) => {
                                 href={href}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="shrink-0 text-blue-600 hover:text-blue-800 p-1 -m-0.5 rounded transition-colors"
+                                className="shrink-0 text-blue-600 hover:text-blue-800 p-0.5 -m-0.5 rounded transition-colors"
                                 aria-label={t("form.projectLink")}
                               >
-                                <Link2 className="w-4 h-4" strokeWidth={2} />
+                                <Link2 className="w-3.5 h-3.5" strokeWidth={2} />
                               </a>
                             ) : null}
                           </div>
                         </div>
                         {item.description ? (
-                          <p className="text-[11px] text-slate-500 whitespace-pre-line">{item.description}</p>
+                          <p className="text-[10px] text-slate-500 leading-snug whitespace-pre-line">{item.description}</p>
                         ) : null}
                       </div>
                     );
@@ -149,7 +149,7 @@ const EuropassPreview = ({ data }) => {
               )}
 
               {kind === "education" && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {(Array.isArray(section.items) ? section.items : []).map((item, i) => {
                     const start = String(item.startDate || item.start || "").trim();
                     const end = String(item.endDate || item.end || "").trim();
@@ -163,22 +163,22 @@ const EuropassPreview = ({ data }) => {
                     return (
                       <div key={item.id ?? i}>
                         {(item.school || dateRange) && (
-                          <div className="flex justify-between items-baseline mb-1 gap-2">
-                            <h4 className="font-bold text-slate-800 text-[14px] min-w-0 flex-1">
+                          <div className="flex justify-between items-baseline mb-0.5 gap-2">
+                            <h4 className="font-semibold text-slate-800 text-[12px] min-w-0 flex-1 leading-snug">
                               {item.school}
                             </h4>
                             {dateRange ? (
-                              <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded shrink-0 max-w-[11rem] text-right leading-snug">
+                              <span className="text-[8px] font-medium text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shrink-0 max-w-[11rem] text-right leading-snug">
                                 {dateRange}
                               </span>
                             ) : null}
                           </div>
                         )}
                         {subtitle ? (
-                          <p className="text-blue-600 text-[12px] font-semibold mb-2">{subtitle}</p>
+                          <p className="text-blue-600 text-[10.5px] font-medium mb-1">{subtitle}</p>
                         ) : null}
                         {item.description ? (
-                          <p className="text-[11px] text-slate-500 whitespace-pre-line">{item.description}</p>
+                          <p className="text-[10px] text-slate-500 leading-snug whitespace-pre-line">{item.description}</p>
                         ) : null}
                       </div>
                     );
@@ -187,7 +187,7 @@ const EuropassPreview = ({ data }) => {
               )}
 
               {kind === "certificates" && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {(section.items || []).map((item, i) => {
                     const start = String(item.startDate || item.start || "").trim();
                     const end = String(item.endDate || item.end || item.date || "").trim();
@@ -197,23 +197,23 @@ const EuropassPreview = ({ data }) => {
                     else if (end) range = end;
                     return (
                       <div key={item.id ?? i}>
-                        <div className="flex justify-between items-center mb-1 gap-2">
-                          <h4 className="font-bold text-slate-800 text-[14px] flex-1 min-w-0">
+                        <div className="flex justify-between items-center mb-0.5 gap-2">
+                          <h4 className="font-semibold text-slate-800 text-[12px] flex-1 min-w-0 leading-snug">
                             {item.name || item.title}
                           </h4>
                           {range ? (
-                            <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded shrink-0 max-w-[11rem] text-right leading-snug">
+                            <span className="text-[8px] font-medium text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shrink-0 max-w-[11rem] text-right leading-snug">
                               {range}
                             </span>
                           ) : null}
                         </div>
                         {(item.issuer || item.organization) ? (
-                          <p className="text-blue-600 text-[12px] font-semibold mb-2">
+                          <p className="text-blue-600 text-[10.5px] font-medium mb-1">
                             {item.issuer || item.organization}
                           </p>
                         ) : null}
                         {item.description ? (
-                          <p className="text-[11px] text-slate-500 whitespace-pre-line">{item.description}</p>
+                          <p className="text-[10px] text-slate-500 leading-snug whitespace-pre-line">{item.description}</p>
                         ) : null}
                       </div>
                     );
@@ -222,7 +222,7 @@ const EuropassPreview = ({ data }) => {
               )}
 
               {kind === "experience" && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {(Array.isArray(section.items) ? section.items : []).map((item, i) => {
                   const start = String(item.startDate || item.start || "").trim();
                   const end = item.current
@@ -237,24 +237,24 @@ const EuropassPreview = ({ data }) => {
                   }
                   return (
                   <div key={item.id ?? i}>
-                    <div className="flex justify-between items-baseline mb-1 gap-2">
-                      <h4 className="font-bold text-slate-800 text-[14px] min-w-0 flex-1">
+                    <div className="flex justify-between items-baseline mb-0.5 gap-2">
+                      <h4 className="font-semibold text-slate-800 text-[12px] min-w-0 flex-1 leading-snug">
                         {item.position || item.title}
                       </h4>
                       {dateRange ? (
-                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded shrink-0 max-w-[11rem] text-right leading-snug">
+                        <span className="text-[8px] font-medium text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shrink-0 max-w-[11rem] text-right leading-snug">
                           {dateRange}
                         </span>
                       ) : null}
                     </div>
                     {item.company ? (
-                      <p className="text-blue-600 text-[12px] font-semibold mb-2">
+                      <p className="text-blue-600 text-[10.5px] font-medium mb-1">
                         {item.company}
                         {item.location ? ` · ${item.location}` : ""}
                       </p>
                     ) : null}
                     {item.description ? (
-                      <p className="text-[11px] text-slate-500 whitespace-pre-line">
+                      <p className="text-[10px] text-slate-500 leading-snug whitespace-pre-line">
                         {item.description}
                       </p>
                     ) : null}

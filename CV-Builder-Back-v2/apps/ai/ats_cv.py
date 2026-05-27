@@ -207,6 +207,7 @@ def collect_ats_facts(snapshot: dict) -> dict:
     experience = []
     skill_names: list[str] = []
     has_skills = False
+    certificate_items: list[dict] = []
 
     for sec in snapshot.get("sections") or []:
         if not isinstance(sec, dict):
@@ -219,6 +220,8 @@ def collect_ats_facts(snapshot: dict) -> dict:
         elif st == "skills":
             has_skills = bool(sec.get("skills"))
             skill_names = list(sec.get("skills") or [])
+        elif st == "certificates":
+            certificate_items = [it for it in (sec.get("items") or []) if isinstance(it, dict)]
 
     exp_dated = []
     for item in experience:
@@ -241,6 +244,22 @@ def collect_ats_facts(snapshot: dict) -> dict:
         len(exp_dated) > 0 and all(e["has_start"] and e["has_end_or_current"] for e in exp_dated)
     )
 
+    cert_dates = [_str(item.get("date")) for item in certificate_items]
+    cert_non_empty_dates = [d for d in cert_dates if d]
+    cert_format_signatures = []
+    for d in cert_non_empty_dates:
+        normalized = d.strip()
+        # Keep separator style in signature; normalize digits to detect mixed formats.
+        signature = re.sub(r"\d", "D", normalized)
+        cert_format_signatures.append(signature)
+
+    certificates_date_format_consistent = (
+        # One or zero dated certificate entries cannot be inconsistent.
+        len(cert_non_empty_dates) <= 1
+        # For multiple dated entries, require one shared date-shape/signature.
+        or len(set(cert_format_signatures)) <= 1
+    )
+
     return {
         "has_summary": bool(summary_text),
         "summary_length": len(summary_text),
@@ -250,6 +269,9 @@ def collect_ats_facts(snapshot: dict) -> dict:
         "has_skills_section": has_skills,
         "skill_count": len(skill_names),
         "skills": skill_names[:50],
+        "certificate_count": len(certificate_items),
+        "certificates_with_date_count": len(cert_non_empty_dates),
+        "certificates_date_format_consistent": certificates_date_format_consistent,
     }
 
 
@@ -308,6 +330,17 @@ _EXP_DATES_CONTEXT_RE = re.compile(
     re.IGNORECASE | re.UNICODE,
 )
 
+_CERT_DATE_FORMAT_RE = re.compile(
+    r"(certificate|certificat|სერტიფიკატ).{0,80}"
+    r"(date|თარიღ|ფორმატ|format|uniform|consistent|ერთიან|არ\s+არის\s+ერთიანი)",
+    re.IGNORECASE | re.UNICODE,
+)
+
+_DATE_FORMAT_GENERIC_RE = re.compile(
+    r"(date|თარიღ|ფორმატ|format).{0,40}(uniform|consistent|ერთიან|არ\s+არის\s+ერთიანი|inconsistent)",
+    re.IGNORECASE | re.UNICODE,
+)
+
 
 def _issue_claims_empty_summary(text: str) -> bool:
     t = text or ""
@@ -319,6 +352,14 @@ def _issue_claims_missing_experience_dates(text: str) -> bool:
     if not _MISSING_EXP_DATES_RE.search(t):
         return False
     return bool(_EXP_DATES_CONTEXT_RE.search(t))
+
+
+def _issue_claims_certificate_date_format_problem(text: str) -> bool:
+    t = text or ""
+    if _CERT_DATE_FORMAT_RE.search(t):
+        return True
+    # Catch short/implicit phrasing like "Date format is not consistent" + certificate context.
+    return bool(_DATE_FORMAT_GENERIC_RE.search(t) and re.search(r"(certificate|სერტიფიკატ)", t, re.IGNORECASE | re.UNICODE))
 
 
 def filter_ats_false_positives(result: dict, facts: dict) -> dict:
@@ -337,6 +378,8 @@ def filter_ats_false_positives(result: dict, facts: dict) -> dict:
         if facts.get("has_summary") and _issue_claims_empty_summary(text):
             continue
         if facts.get("all_experience_dated") and _issue_claims_missing_experience_dates(text):
+            continue
+        if facts.get("certificates_date_format_consistent") and _issue_claims_certificate_date_format_problem(text):
             continue
         filtered.append(issue)
 

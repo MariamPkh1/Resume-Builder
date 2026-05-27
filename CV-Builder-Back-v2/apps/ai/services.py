@@ -26,6 +26,129 @@ def _normalize_target_language(language_code: str | None, target_language: str |
     return "en", "English"
 
 
+def _looks_mostly_latin(text: str) -> bool:
+    """Heuristic: detect English/Latin-heavy strings."""
+    if not text:
+        return False
+    letters = [ch for ch in text if ch.isalpha()]
+    if not letters:
+        return False
+    latin = [ch for ch in letters if ("a" <= ch.lower() <= "z")]
+    return (len(latin) / len(letters)) >= 0.7
+
+
+def _rewrite_priority_actions_language(
+    priority_actions: list[str], *, target_language: str, client: OpenAI, model: str
+) -> list[str]:
+    """Rewrite recommendation bullets into the target language."""
+    prompt = f"""
+Rewrite these CV recommendation bullet points into {target_language}.
+Keep the exact meaning, keep them concise, and return STRICT JSON only:
+{{
+  "priority_actions": ["...", "..."]
+}}
+
+input:
+{json.dumps(priority_actions, ensure_ascii=False)}
+""".strip()
+
+    response = client.responses.create(
+        model=model,
+        input=prompt,
+        temperature=0.1,
+        max_output_tokens=350,
+    )
+    parsed = _safe_json_loads(getattr(response, "output_text", "") or "")
+    if not isinstance(parsed, dict):
+        return priority_actions
+    items = parsed.get("priority_actions")
+    if not isinstance(items, list):
+        return priority_actions
+    cleaned = [str(x).strip() for x in items if str(x).strip()]
+    return cleaned or priority_actions
+
+
+def _generate_priority_actions(
+    result: dict, *, target_language: str, client: OpenAI, model: str
+) -> list[str]:
+    """Generate concise, context-aware recommendations from tailor result."""
+    payload = {
+        "tailored_summary": result.get("tailored_summary", ""),
+        "keyword_targets": result.get("keyword_targets", []),
+        "section_suggestions": result.get("section_suggestions", {}),
+    }
+    prompt = f"""
+Create 2-4 concise CV tailoring recommendation bullets in {target_language}.
+Use the provided tailoring result and keep them specific to this CV/job.
+Return STRICT JSON only:
+{{
+  "priority_actions": ["...", "..."]
+}}
+
+tailor_result:
+{json.dumps(payload, ensure_ascii=False)}
+""".strip()
+
+    response = client.responses.create(
+        model=model,
+        input=prompt,
+        temperature=0.2,
+        max_output_tokens=350,
+    )
+    parsed = _safe_json_loads(getattr(response, "output_text", "") or "")
+    if not isinstance(parsed, dict):
+        return []
+    items = parsed.get("priority_actions")
+    if not isinstance(items, list):
+        return []
+    return [str(x).strip() for x in items if str(x).strip()]
+
+
+def _enforce_tailor_language(
+    result: dict, language_code: str, *, client: OpenAI, model: str
+) -> dict:
+    """
+    Best-effort guard so Georgian tailoring doesn't show English bullet points.
+    Keeps original AI output when language looks correct.
+    """
+    if not isinstance(result, dict):
+        return result
+
+    if language_code != "ka":
+        return result
+
+    out = dict(result)
+    priority_actions = out.get("priority_actions")
+    if isinstance(priority_actions, list):
+        normalized = [
+            item if isinstance(item, str) else str(item)
+            for item in priority_actions
+            if str(item).strip()
+        ]
+        if any(_looks_mostly_latin(item) for item in normalized):
+            rewritten = _rewrite_priority_actions_language(
+                normalized,
+                target_language="Georgian",
+                client=client,
+                model=model,
+            )
+            # Strict: keep only non-Latin-heavy items for Georgian mode.
+            out["priority_actions"] = [x for x in rewritten if not _looks_mostly_latin(x)]
+        else:
+            out["priority_actions"] = normalized
+    else:
+        out["priority_actions"] = []
+
+    # Always keep recommendations visible in Georgian mode.
+    if language_code == "ka" and not out.get("priority_actions"):
+        generated = _generate_priority_actions(
+            out, target_language="Georgian", client=client, model=model
+        )
+        out["priority_actions"] = [x for x in generated if not _looks_mostly_latin(x)]
+
+    return out
+
+
 def analyze_cv_with_openai(
     cv,
     job_description: str = "",
@@ -47,13 +170,12 @@ def analyze_cv_with_openai(
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     model = getattr(settings, "OPENAI_MODEL", "gpt-4o-mini")
 
-    cv_payload = {
-        "title": cv.title,
-        "language": cv.language,
-        "template": cv.template,
-        "cv_data": cv.cv_data,
-        "section_order": cv.section_order,
-    }
+    # Use compact normalized snapshot (no photo/base64, trimmed fields)
+    # to avoid context window overflow on large CV JSON.
+    cv_payload = build_ats_cv_snapshot(cv)
+    trimmed_job_description = (job_description or "").strip()
+    if len(trimmed_job_description) > 6000:
+        trimmed_job_description = trimmed_job_description[:6000] + "…"
 
     prompt = f"""
 You are an expert CV reviewer and ATS consultant.
@@ -77,7 +199,7 @@ Rules:
 - Return valid JSON only.
 
 job_description:
-{job_description}
+{trimmed_job_description}
 
 cv:
 {json.dumps(cv_payload, ensure_ascii=False)}
@@ -377,23 +499,26 @@ You are an expert CV tailoring assistant.
 Task: Tailor this CV for the target job description.
 Return STRICT JSON only with this exact shape:
 {{
-  "tailored_summary": "<improved summary draft tailored to the job>",
+  "tailored_summary": "<complete professional summary paragraph, ready to paste into the CV>",
   "keyword_targets": ["<keyword 1>", "<keyword 2>", "..."],
   "section_suggestions": {{
-    "summary": ["...", "..."],
-    "experience": ["...", "..."],
-    "skills": ["...", "..."]
+    "summary": ["<complete summary text if not using tailored_summary>"],
+    "experience": ["<complete rewritten description for entry 1>", "<for entry 2>", "..."],
+    "skills": ["<skill 1>", "<skill 2>", "..."]
   }},
-  "priority_actions": ["<highest priority action>", "..."]
+  "priority_actions": ["<brief reviewer note only — not section body text>", "..."]
 }}
 
 Rules:
-- Do NOT invent experience or achievements.
-- Suggest wording and focus changes only.
-- If CV is missing key sections/content, say so clearly in suggestions.
-- Prioritize ATS-relevant keywords from the job description.
+- Do NOT invent experience, employers, degrees, or achievements.
+- Every value in tailored_summary and section_suggestions must be FINAL CV text the user can paste as-is.
+- NEVER return meta-instructions (e.g. "add more detail about X", "mention technology Y") — only the actual rewritten content.
+- section_suggestions.experience: one array element per work-history entry, in the same order as in the CV.
+- section_suggestions.skills: one array element per skill name (not sentences about skills).
+- If CV content is missing, return an empty string for that slot and explain in priority_actions only.
+- Prioritize ATS-relevant keywords from the job description naturally in the rewritten text.
 - If focus_sections is provided, prioritize those sections.
-- The response values (all suggestions and drafts) must be entirely in {target_language}.
+- The response values (tailored_summary, keyword_targets, section_suggestions, and priority_actions) must be entirely in {target_language}.
 - Keep JSON keys in English.
 - If the target language is Georgian, use natural professional Georgian terminology suitable for CV tailoring.
 - Technical keywords (e.g., Django, PostgreSQL, REST API) may remain in original form where appropriate.
@@ -414,7 +539,7 @@ cv:
         model=model,
         input=prompt,
         temperature=0.3,
-        max_output_tokens=1200,
+        max_output_tokens=2500,
     )
 
     raw_text = getattr(response, "output_text", "") or ""
@@ -427,6 +552,10 @@ cv:
             "section_suggestions": {},
             "priority_actions": ["Model returned non-JSON output; retry request."],
         }
+    else:
+        parsed = _enforce_tailor_language(
+            parsed, language_code, client=client, model=model
+        )
 
     usage = getattr(response, "usage", None)
     prompt_tokens = getattr(usage, "input_tokens", 0) if usage else 0

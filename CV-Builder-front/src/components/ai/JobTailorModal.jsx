@@ -26,66 +26,117 @@ const getSectionLabel = (section, trans) => {
   return typeof raw === "string" ? raw.replace(/_/g, " ") : "";
 };
 
+/** Plain text shown in Original/Updated comparison cards */
+const getSectionPlainText = (section) => {
+  if (!section) return "";
+  if (section.type === "summary") {
+    return (section.content || section.description || "").trim();
+  }
+  if (!Array.isArray(section.items) || section.items.length === 0) {
+    return (section.content || section.description || "").trim();
+  }
+  return section.items
+    .map((item) => {
+      switch (section.type) {
+        case "skills":
+          return item.name || item.skill || item.description || "";
+        case "experience":
+          return [
+            item.description,
+            Array.isArray(item.bullets) ? item.bullets.join("\n") : "",
+          ]
+            .filter(Boolean)
+            .join("\n");
+        default:
+          return item.description || item.name || item.title || "";
+      }
+    })
+    .filter((t) => t && String(t).trim())
+    .join("\n\n");
+};
+
+/** Merge AI output into a section using the same fields the editor forms bind to */
+const applySuggestionToSection = (section, suggestions, tailoredSummary) => {
+  const list = Array.isArray(suggestions) ? suggestions : suggestions ? [suggestions] : [];
+
+  if (section.type === "summary") {
+    const text = (tailoredSummary || list[0] || "").trim();
+    if (!text) return section;
+    return { ...section, content: text };
+  }
+
+  if (section.type === "skills" && list.length > 0) {
+    const names = list.map((s) => String(s).trim()).filter(Boolean);
+    if (names.length === 0) return section;
+    const items = section.items ?? [];
+    if (items.length > 0) {
+      return {
+        ...section,
+        items: items.map((item, i) => ({
+          ...item,
+          name: names[i] ?? item.name,
+        })),
+      };
+    }
+    return {
+      ...section,
+      items: names.map((name, i) => ({
+        id: `skill_tailor_${Date.now()}_${i}`,
+        name,
+        level: "Intermediate",
+      })),
+    };
+  }
+
+  if (list.length > 0 && Array.isArray(section.items) && section.items.length > 0) {
+    return {
+      ...section,
+      items: section.items.map((item, i) => ({
+        ...item,
+        description: list[i] ?? list[0] ?? item.description,
+      })),
+    };
+  }
+
+  if (list[0] && section.content !== undefined) {
+    return { ...section, content: list[0] };
+  }
+
+  return section;
+};
+
 const mapTailorResultToUI = (data, cvData, trans) => {
-  if (data?.tailored_cv) return data.tailored_cv;
-  const r = data?.result ?? {};
+  const r = data?.result ?? data ?? {};
   const keywordTargets = Array.isArray(r.keyword_targets) ? r.keyword_targets : [];
   const sectionSuggestions = r.section_suggestions ?? {};
   const priorityActions = Array.isArray(r.priority_actions) ? r.priority_actions : [];
-  const tailoredSummary = r.tailored_summary ?? "";
-
-  const changes = [];
-  const sections = cvData?.sections ?? [];
-  for (const section of sections) {
-    const suggestions = sectionSuggestions[section.type];
-    if (Array.isArray(suggestions) && suggestions[0]) {
-      const updated = suggestions[0];
-      const original = typeof section.content === "string" ? section.content
-        : (Array.isArray(section.items) ? section.items.map((i) => i.description).filter(Boolean).join("\n\n") : "");
-      changes.push({
-        section: section.type,
-        sectionTitle: getSectionLabel(section, trans),
-        original: original || trans("tailor.empty"),
-        updated,
-        reason: trans("tailor.aiSuggestionFor").replace(
-          "{section}",
-          section.title ?? getSectionLabel(section, trans)
-        ),
-      });
-    }
-  }
-  if (tailoredSummary && !changes.some((c) => c.section === "summary")) {
-    const summarySec = sections.find((s) => s.type === "summary");
-    changes.unshift({
-      section: "summary",
-      sectionTitle: trans("resume.summary"),
-      original: summarySec?.content ?? trans("tailor.empty"),
-      updated: tailoredSummary,
-      reason: trans("tailor.tailoredSummaryReason"),
-    });
-  }
+  const tailoredSummary = (r.tailored_summary ?? "").trim();
 
   let tailoredCvData = null;
   if (cvData) {
     tailoredCvData = JSON.parse(JSON.stringify(cvData));
-    const personalInfo = tailoredCvData.personal_info ?? {};
-    tailoredCvData.personal_info = personalInfo;
-    tailoredCvData.sections = (tailoredCvData.sections ?? []).map((sec) => {
-      const suggestions = sectionSuggestions[sec.type];
-      const summaryText = sec.type === "summary" && tailoredSummary ? tailoredSummary : (Array.isArray(suggestions) && suggestions[0] ? suggestions[0] : null);
-      if (summaryText && sec.type === "summary") {
-        return { ...sec, content: summaryText };
-      }
-      if (Array.isArray(suggestions) && suggestions[0] && sec.type !== "summary") {
-        if (Array.isArray(sec.items) && sec.items[0]) {
-          return { ...sec, items: sec.items.map((item, i) => ({
-            ...item,
-            description: suggestions[i] ?? suggestions[0] ?? item.description,
-          })) };
-        }
-        if (sec.content !== undefined) return { ...sec, content: suggestions[0] };
-      }
-      return sec;
+    tailoredCvData.sections = (tailoredCvData.sections ?? []).map((sec) =>
+      applySuggestionToSection(sec, sectionSuggestions[sec.type], tailoredSummary)
+    );
+  }
+
+  const changes = [];
+  const sections = cvData?.sections ?? [];
+  for (const section of sections) {
+    const tailoredSec = tailoredCvData?.sections?.find((s) => s.id === section.id);
+    if (!tailoredSec) continue;
+    const original = getSectionPlainText(section);
+    const updated = getSectionPlainText(tailoredSec);
+    if (!updated || updated === original) continue;
+    changes.push({
+      section: section.type,
+      sectionTitle: getSectionLabel(section, trans),
+      original: original || trans("tailor.empty"),
+      updated,
+      reason: trans("tailor.aiSuggestionFor").replace(
+        "{section}",
+        section.title ?? getSectionLabel(section, trans)
+      ),
     });
   }
 
