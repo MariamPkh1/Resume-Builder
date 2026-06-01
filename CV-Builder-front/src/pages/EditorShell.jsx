@@ -177,14 +177,14 @@ const EditorShell = ({
 
           <div className="h-4 w-px bg-gray-200 mx-1 hidden lg:block" />
 
-          <button
+          {/* <button
             onClick={handleSave}
             disabled={isSaving}
             className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
             title="Save"
           >
             {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-          </button>
+          </button> */}
 
           <button
             onClick={handleDownloadPDF}

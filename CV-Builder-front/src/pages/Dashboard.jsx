@@ -248,7 +248,7 @@ const Dashboard = () => {
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder={t("dashboard.searchPlaceholder") || "Search CVs by title..."}
+                  placeholder={t("dashboard.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
@@ -264,7 +264,7 @@ const Dashboard = () => {
                     type="button"
                     onClick={handleClearSearch}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                    title="Clear search"
+                    title={t("dashboard.clearSearchTitle")}
                   >
                     <X size={14} />
                   </button>
@@ -275,7 +275,7 @@ const Dashboard = () => {
                 onClick={handleSearch}
                 className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shrink-0"
               >
-                Search
+                {t("dashboard.search")}
               </button>
             </div>
             {tab === "active" && (
@@ -312,26 +312,26 @@ const Dashboard = () => {
               debouncedSearch ? (
                 <>
                   <Search size={32} className="text-slate-200 mx-auto mb-6" />
-                  <h2 className="text-xl font-medium text-slate-900 mb-2">No archived resumes match your search</h2>
-                  <p className="text-slate-400 text-sm mb-6">Try a different search term or clear the search.</p>
+                  <h2 className="text-xl font-medium text-slate-900 mb-2">{t("dashboard.noArchivedSearchResults")}</h2>
+                  <p className="text-slate-400 text-sm mb-6">{t("dashboard.noArchivedSearchResultsDesc")}</p>
                   <button type="button" onClick={handleClearSearch} className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-full text-[11px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all">
-                    Clear search
+                    {t("dashboard.clearSearch")}
                   </button>
                 </>
               ) : (
                 <>
                   <Archive size={32} className="text-slate-200 mx-auto mb-6" />
-                  <h2 className="text-xl font-medium text-slate-900 mb-2">No archived resumes</h2>
-                  <p className="text-slate-400 text-sm">Archived resumes are hidden but never deleted.</p>
+                  <h2 className="text-xl font-medium text-slate-900 mb-2">{t("dashboard.noArchivedResumes")}</h2>
+                  <p className="text-slate-400 text-sm">{t("dashboard.noArchivedResumesDesc")}</p>
                 </>
               )
             ) : debouncedSearch ? (
               <>
                 <Search size={32} className="text-slate-200 mx-auto mb-6" />
-                <h2 className="text-xl font-medium text-slate-900 mb-2">No CVs match your search</h2>
-                <p className="text-slate-400 text-sm mb-6">Try a different search term or clear the search to see all CVs.</p>
+                <h2 className="text-xl font-medium text-slate-900 mb-2">{t("dashboard.noSearchResults")}</h2>
+                <p className="text-slate-400 text-sm mb-6">{t("dashboard.noSearchResultsDesc")}</p>
                 <button type="button" onClick={handleClearSearch} className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-full text-[11px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all">
-                  Clear search
+                  {t("dashboard.clearSearch")}
                 </button>
               </>
             ) : (
