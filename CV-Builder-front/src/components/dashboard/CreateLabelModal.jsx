@@ -3,8 +3,10 @@ import { X, Check, Loader2 } from "lucide-react";
 import { LABEL_COLORS } from "./labelColors";
 import api from "../../services/api";
 import { showToast } from "../../utils/toast";
+import { useLanguage } from "../../context/LanguageContext";
 
 const CreateLabelModal = ({ onClose, onCreate }) => {
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [color, setColor] = useState("gray");
   const [loading, setLoading] = useState(false);
@@ -18,7 +20,7 @@ const CreateLabelModal = ({ onClose, onCreate }) => {
       onClose();
     } catch (err) {
       const nameError = err?.response?.data?.name?.[0];
-      showToast({ message: nameError ?? "Failed to create label." });
+      showToast({ message: nameError ?? t("dashboard.label.createFailed") });
     } finally {
       setLoading(false);
     }
@@ -28,7 +30,9 @@ const CreateLabelModal = ({ onClose, onCreate }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">New Label</h3>
+          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">
+            {t("dashboard.label.newLabel")}
+          </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors">
             <X size={16} />
           </button>
@@ -40,11 +44,13 @@ const CreateLabelModal = ({ onClose, onCreate }) => {
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          placeholder="Label name…"
+          placeholder={t("dashboard.label.namePlaceholder")}
           className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-400 mb-4"
         />
 
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Color</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+          {t("dashboard.label.color")}
+        </p>
         <div className="flex gap-2 mb-6">
           {LABEL_COLORS.map((c) => (
             <button
@@ -65,7 +71,7 @@ const CreateLabelModal = ({ onClose, onCreate }) => {
             onClick={onClose}
             className="flex-1 py-2 text-[11px] font-bold text-slate-500 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all uppercase tracking-widest"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             onClick={handleSubmit}
@@ -73,7 +79,7 @@ const CreateLabelModal = ({ onClose, onCreate }) => {
             className="flex-1 py-2 text-[11px] font-bold text-white bg-slate-900 rounded-xl hover:bg-blue-600 transition-all uppercase tracking-widest disabled:opacity-40 flex items-center justify-center gap-1.5"
           >
             {loading ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-            Create
+            {t("dashboard.label.create")}
           </button>
         </div>
       </div>

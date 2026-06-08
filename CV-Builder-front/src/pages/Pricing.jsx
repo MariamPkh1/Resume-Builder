@@ -1,13 +1,43 @@
 import React, { useState } from "react";
 import NavBar from "../components/NavBar";
-import { Check, Sparkles, Zap, Loader2, X } from "lucide-react";
+import { Loader2, X, Sparkles, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import api from "../services/api";
 import { showToast } from "../utils/toast";
 
-// ─── Plan data builder (uses translation function) ───────────────────────────
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const T = {
+  bg: "#f7f9fb",
+  surface: "#ffffff",
+  surfaceLow: "#f2f4f6",
+  surfaceContainer: "#eceef0",
+  surfaceContainerHigh: "#e6e8ea",
+  primary: "#000000",
+  onPrimary: "#ffffff",
+  primaryContainer: "#131b2e",
+  onPrimaryContainer: "#7c839b",
+  secondary: "#545f73",
+  onSurface: "#191c1e",
+  onSurfaceVariant: "#45464d",
+  outline: "#76777d",
+  outlineVariant: "rgba(198,198,205,0.25)",
+  error: "#ba1a1a",
+  fontHeadline: "'Playfair Display', Georgia, serif",
+  fontBody: "'Inter', -apple-system, sans-serif",
+};
+
+const glassCard = {
+  background: "rgba(255,255,255,0.7)",
+  backdropFilter: "blur(12px)",
+  WebkitBackdropFilter: "blur(12px)",
+  boxShadow: "0px 20px 40px rgba(19,27,46,0.04)",
+  border: `1px solid ${T.outlineVariant}`,
+  borderRadius: 8,
+};
+
+// ─── Plan data builder ────────────────────────────────────────────────────────
 const buildPlans = (t) => [
   {
     key: "free",
@@ -87,133 +117,178 @@ const buildPlans = (t) => [
   },
 ];
 
+// ─── Check icon ───────────────────────────────────────────────────────────────
+const CheckIcon = ({ filled = false }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+    <path
+      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5l-4-4 1.41-1.41L10 13.67l6.59-6.59L18 8.5l-8 8z"
+      fill={filled ? T.primaryContainer : "none"}
+      stroke={filled ? "none" : T.primaryContainer}
+      strokeWidth={filled ? 0 : 1.5}
+    />
+    {!filled && (
+      <path d="M9 12l2 2 4-4" stroke={T.primaryContainer} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    )}
+  </svg>
+);
+
 // ─── Trial Banner ─────────────────────────────────────────────────────────────
 const TrialBanner = ({ daysLeft, onDismiss, t }) => (
-  <div className="mb-8 mx-auto max-w-xl bg-blue-50/50 border border-blue-100 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-    <div className="flex items-center gap-2">
-      <Sparkles size={14} className="text-blue-600 shrink-0" />
-      <p className="text-xs font-medium text-slate-700">
+  <div style={{
+    marginBottom: 32, maxWidth: 560, margin: "0 auto 32px",
+    background: "rgba(19,27,46,0.04)", border: `1px solid rgba(19,27,46,0.1)`,
+    borderRadius: 8, padding: "12px 16px",
+    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+    fontFamily: T.fontBody,
+  }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <Sparkles size={13} style={{ color: T.primaryContainer, flexShrink: 0 }} />
+      <p style={{ fontSize: 12, fontWeight: 500, color: T.onSurface, margin: 0 }}>
         {t("pricing.trialBanner")}{" "}
-        <span className="font-black text-blue-600">
+        <span style={{ fontWeight: 800, color: T.primaryContainer }}>
           {daysLeft} {daysLeft !== 1 ? t("pricing.trialBannerDaysPlural") : t("pricing.trialBannerDays")}
         </span>{" "}
         {t("pricing.trialBannerEnd")}
       </p>
     </div>
-    <button onClick={onDismiss} className="text-slate-400 hover:text-blue-600 transition-colors shrink-0">
+    <button onClick={onDismiss} style={{ background: "none", border: "none", cursor: "pointer", color: T.outline, padding: 2, flexShrink: 0 }}>
       <X size={13} />
     </button>
   </div>
 );
 
-// ─── Billing Toggle (Monthly / Yearly) ────────────────────────────────────────
+// ─── Billing Toggle ───────────────────────────────────────────────────────────
 const BillingToggle = ({ isYearly, onToggle, t }) => (
-  <div className="flex justify-center mb-4">
-    <div
-      role="group"
-      aria-label="Billing period"
-      className="inline-flex p-0.5 rounded-full bg-slate-100 border border-slate-200"
-    >
-      <button
-        type="button"
-        onClick={() => onToggle(false)}
-        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${
-          !isYearly
-            ? "bg-white text-slate-900 shadow-sm"
-            : "text-slate-500 hover:text-slate-700"
-        }`}
-      >
-        {t("pricing.planProMonthly")}
-      </button>
-      <button
-        type="button"
-        onClick={() => onToggle(true)}
-        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${
-          isYearly
-            ? "bg-white text-slate-900 shadow-sm"
-            : "text-slate-500 hover:text-slate-700"
-        }`}
-      >
-        {t("pricing.planProYearly")}
-      </button>
+  <div style={{ display: "flex", marginBottom: 20 }}>
+    <div style={{
+      display: "inline-flex", padding: 3, borderRadius: 999,
+      background: T.surfaceLow, border: `1px solid ${T.outlineVariant}`,
+    }}>
+      {[
+        { label: t("pricing.planProMonthly"), val: false },
+        { label: t("pricing.planProYearly"), val: true },
+      ].map(({ label, val }) => (
+        <button
+          key={String(val)}
+          type="button"
+          onClick={() => onToggle(val)}
+          style={{
+            padding: "5px 12px", borderRadius: 999, border: "none", cursor: "pointer",
+            fontFamily: T.fontBody, fontSize: 9, fontWeight: 700,
+            letterSpacing: "0.05em", textTransform: "uppercase", transition: "all 0.15s",
+            background: isYearly === val ? T.surface : "transparent",
+            color: isYearly === val ? T.onSurface : T.onSurfaceVariant,
+            boxShadow: isYearly === val ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+          }}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   </div>
 );
 
-// ─── Plan Card ────────────────────────────────────────────────────────────────
+// ─── Feature list item ────────────────────────────────────────────────────────
+const FeatureItem = ({ text, included, filled = false }) => (
+  <li style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+    {included ? (
+      <CheckIcon filled={filled} />
+    ) : (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+        <circle cx="12" cy="12" r="9" stroke={T.outlineVariant} strokeWidth="1.5" />
+        <path d="M9 15L15 9M9 9l6 6" stroke={T.outlineVariant} strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    )}
+    <span style={{
+      fontFamily: T.fontBody, fontSize: 12, lineHeight: 1.5,
+      color: included ? T.onSurface : T.outline,
+      textDecoration: included ? "none" : "line-through",
+    }}>
+      {text}
+    </span>
+  </li>
+);
+
+// ─── Plan Card (Free / Professional) ─────────────────────────────────────────
 const PlanCard = ({ plan, loading, onSelect, currentTier, t }) => {
   const isCurrentPlan = currentTier === plan.key;
-  // For free plan, only show included features
   const visibleFeatures = plan.key === "free"
     ? plan.features.filter((f) => f.included)
     : plan.features;
 
   return (
-    <div
-      className={`relative flex flex-col p-6 rounded-2xl border bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
-        plan.highlight
-          ? "border-blue-600 shadow-xl shadow-blue-600/10 scale-[1.02] z-10"
-          : "border-slate-100 shadow-sm"
-      }`}
+    <div style={{ ...glassCard, display: "flex", flexDirection: "column", padding: "24px 28px", transition: "transform 0.25s, box-shadow 0.25s", cursor: "default" }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0px 24px 40px rgba(19,27,46,0.09)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0px 20px 40px rgba(19,27,46,0.04)"; }}
     >
-      {plan.badge && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 whitespace-nowrap shadow-md shadow-blue-200">
-          <Sparkles size={8} className="fill-white" /> {plan.badge}
-        </div>
-      )}
+      {/* Plan name */}
+      <span style={{ fontFamily: T.fontBody, fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: T.onSurfaceVariant, display: "block", marginBottom: 14 }}>
+        {plan.name}
+      </span>
 
-      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">{plan.name}</h3>
-
-      <div className="flex items-baseline gap-1 mb-1">
-        <span className="text-3xl font-black text-slate-900 tracking-tighter">{plan.monthlyPrice}</span>
-        {plan.period && <span className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">{plan.period}</span>}
+      {/* Price */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 2, marginBottom: plan.yearlyPrice ? 3 : 12 }}>
+        <span style={{ fontFamily: T.fontHeadline, fontSize: 36, fontWeight: 700, lineHeight: 1, letterSpacing: "-0.02em", color: T.onSurface }}>
+          {plan.monthlyPrice?.replace("₾", "")}
+        </span>
+        <span style={{ fontFamily: T.fontHeadline, fontSize: 18, fontWeight: 600, color: T.onSurface }}>₾</span>
+        {plan.period && (
+          <span style={{ fontFamily: T.fontBody, fontSize: 9, fontWeight: 600, color: T.onSurfaceVariant, letterSpacing: "0.08em", textTransform: "uppercase", marginLeft: 4 }}>
+            {plan.period}
+          </span>
+        )}
       </div>
 
       {plan.yearlyPrice && (
-        <p className="text-[10px] font-bold text-blue-600/70 mb-3 uppercase tracking-wide">or {plan.yearlyPrice}/year</p>
+        <p style={{ fontFamily: T.fontBody, fontSize: 9, fontWeight: 700, color: T.onPrimaryContainer, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 12 }}>
+          OR {plan.yearlyPrice} / YEAR
+        </p>
       )}
 
-      <p className="text-xs text-slate-500 mb-5 font-medium leading-relaxed">{plan.description}</p>
+      <p style={{ fontFamily: T.fontBody, fontSize: 12, color: T.onSurfaceVariant, lineHeight: 1.6, marginBottom: 18, flex: "none" }}>
+        {plan.description}
+      </p>
 
+      {/* CTA */}
       {isCurrentPlan ? (
-        <div className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] text-center bg-slate-50 text-slate-400 mb-5 border border-slate-100 cursor-default">
+        <div style={{
+          width: "100%", padding: "9px 0", borderRadius: 6, textAlign: "center",
+          background: T.surfaceContainerHigh, color: T.onSurfaceVariant,
+          fontFamily: T.fontBody, fontSize: 9, fontWeight: 700, letterSpacing: "0.16em",
+          textTransform: "uppercase", marginBottom: 20, boxSizing: "border-box",
+        }}>
           {t("pricing.currentPlan")}
         </div>
       ) : (
         <button
           onClick={() => onSelect(plan)}
           disabled={loading}
-          className={`w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all mb-5 disabled:opacity-60 active:scale-95 ${
-            plan.highlight
-              ? "bg-slate-900 text-white hover:bg-blue-600 shadow-md shadow-slate-200"
-              : "bg-white border border-slate-200 text-slate-900 hover:bg-slate-50"
-          }`}
+          style={{
+            width: "100%", padding: "9px 0", borderRadius: 6, border: `1px solid ${T.primary}`,
+            background: "transparent", color: T.primary, fontFamily: T.fontBody,
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase",
+            cursor: loading ? "not-allowed" : "pointer", marginBottom: 20, display: "flex",
+            alignItems: "center", justifyContent: "center", gap: 6, transition: "background 0.15s",
+            opacity: loading ? 0.6 : 1, boxSizing: "border-box",
+          }}
+          onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.background = T.surfaceLow; } }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         >
-          {loading ? <Loader2 size={13} className="animate-spin mx-auto" /> : plan.cta}
+          {loading ? <Loader2 size={12} style={{ animation: "spin 0.8s linear infinite" }} /> : plan.cta}
         </button>
       )}
 
-      <ul className="space-y-2.5 flex-1">
+      {/* Features */}
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
         {visibleFeatures.map((f, i) => (
-          <li key={i} className="flex items-start gap-2 text-[11px] font-medium">
-            <div className="mt-0.5 shrink-0">
-              {f.included ? (
-                <Check size={11} className="text-blue-600" strokeWidth={3} />
-              ) : (
-                <X size={11} className="text-slate-200" strokeWidth={3} />
-              )}
-            </div>
-            <span className={f.included ? "text-slate-600" : "text-slate-300 line-through"}>
-              {f.text}
-            </span>
-          </li>
+          <FeatureItem key={i} text={f.text} included={f.included} />
         ))}
       </ul>
     </div>
   );
 };
 
-// ─── Pro Plan Card (with Monthly/Yearly toggle + trial states) ────────────────
+// ─── Pro Plan Card ────────────────────────────────────────────────────────────
 const ProPlanCard = ({
   plan, loading, onSelect, onStartTrial, onCancelTrial,
   currentTier, isTrialActive, trialEligible, daysLeftInTrial, t,
@@ -232,9 +307,18 @@ const ProPlanCard = ({
   };
 
   const renderCta = () => {
+    const btnBase = {
+      width: "100%", padding: "9px 0", borderRadius: 6,
+      fontFamily: T.fontBody, fontSize: 9, fontWeight: 700,
+      letterSpacing: "0.16em", textTransform: "uppercase",
+      cursor: loading ? "not-allowed" : "pointer",
+      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+      transition: "all 0.15s", border: "none", boxSizing: "border-box",
+    };
+
     if (isPaidPro) {
       return (
-        <div className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] text-center bg-slate-50 text-slate-400 mb-5 border border-slate-100 cursor-default">
+        <div style={{ ...btnBase, background: T.surfaceContainerHigh, color: T.onSurfaceVariant, marginBottom: 24, cursor: "default" }}>
           {t("pricing.currentPlan")}
         </div>
       );
@@ -242,24 +326,22 @@ const ProPlanCard = ({
 
     if (isTrialActive) {
       return (
-        <div className="mb-5 space-y-2">
-          <div className="w-full py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] text-center bg-blue-50 text-blue-700 border border-blue-200 cursor-default">
+        <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ ...btnBase, background: "rgba(19,27,46,0.06)", color: T.primaryContainer, cursor: "default", border: `1px solid rgba(19,27,46,0.15)` }}>
             {t("pricing.trialActive")} — {daysLeftInTrial}d {t("pricing.trialLeft")}
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleSelect}
-              disabled={loading}
-              className="flex-1 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all disabled:opacity-60 active:scale-95 bg-slate-900 text-white hover:bg-blue-600 shadow-md shadow-slate-200"
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={handleSelect} disabled={!!loading} style={{ ...btnBase, flex: 1, background: T.primaryContainer, color: T.onPrimary, opacity: loading ? 0.6 : 1 }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = T.primary; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = T.primaryContainer; }}
             >
-              {loading === "pay" ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("pricing.subscribePro")}
+              {loading === "pay" ? <Loader2 size={13} style={{ animation: "spin 0.8s linear infinite" }} /> : t("pricing.subscribePro")}
             </button>
-            <button
-              onClick={onCancelTrial}
-              disabled={loading}
-              className="flex-1 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all disabled:opacity-60 active:scale-95 bg-white border border-red-200 text-red-500 hover:bg-red-50"
+            <button onClick={onCancelTrial} disabled={!!loading} style={{ ...btnBase, flex: 1, background: "transparent", color: T.error, border: `1px solid rgba(186,26,26,0.25)`, opacity: loading ? 0.6 : 1 }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "rgba(186,26,26,0.05)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
             >
-              {loading === "cancel" ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("pricing.cancelTrial")}
+              {loading === "cancel" ? <Loader2 size={13} style={{ animation: "spin 0.8s linear infinite" }} /> : t("pricing.cancelTrial")}
             </button>
           </div>
         </div>
@@ -268,18 +350,16 @@ const ProPlanCard = ({
 
     if (trialEligible) {
       return (
-        <div className="mb-5 space-y-2">
-          <button
-            onClick={onStartTrial}
-            disabled={loading}
-            className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all disabled:opacity-60 active:scale-95 bg-slate-900 text-white hover:bg-blue-600 shadow-md shadow-slate-200"
+        <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+          <button onClick={onStartTrial} disabled={!!loading} style={{ ...btnBase, background: T.primaryContainer, color: T.onPrimary, opacity: loading ? 0.6 : 1, boxShadow: "0 4px 16px rgba(19,27,46,0.18)" }}
+            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = T.primary; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = T.primaryContainer; }}
           >
-            {loading === "trial" ? <Loader2 size={13} className="animate-spin mx-auto" /> : t("pricing.startTrial")}
+            {loading === "trial" ? <Loader2 size={13} style={{ animation: "spin 0.8s linear infinite" }} /> : t("pricing.startTrial")}
           </button>
-          <button
-            onClick={handleSelect}
-            disabled={loading}
-            className="w-full py-2 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all disabled:opacity-60 active:scale-95 bg-white border border-slate-200 text-slate-500 hover:bg-slate-50"
+          <button onClick={handleSelect} disabled={!!loading} style={{ ...btnBase, background: "transparent", border: `1px solid ${T.outlineVariant}`, color: T.onSurfaceVariant, opacity: loading ? 0.6 : 1 }}
+            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = T.surfaceLow; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
           >
             {t("pricing.skipTrialBuy")}
           </button>
@@ -287,56 +367,72 @@ const ProPlanCard = ({
       );
     }
 
-    // Trial already used — show normal buy button
     return (
-      <button
-        onClick={handleSelect}
-        disabled={loading}
-        className="w-full py-3 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all mb-5 disabled:opacity-60 active:scale-95 bg-slate-900 text-white hover:bg-blue-600 shadow-md shadow-slate-200"
+      <button onClick={handleSelect} disabled={!!loading} style={{ ...btnBase, background: T.primaryContainer, color: T.onPrimary, marginBottom: 24, opacity: loading ? 0.6 : 1, boxShadow: "0 4px 16px rgba(19,27,46,0.18)" }}
+        onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = T.primary; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = T.primaryContainer; }}
       >
-        {loading === "pay" ? <Loader2 size={13} className="animate-spin mx-auto" /> : variant.cta}
+        {loading === "pay" ? <Loader2 size={13} style={{ animation: "spin 0.8s linear infinite" }} /> : variant.cta}
       </button>
     );
   };
 
   return (
-    <div className="relative flex flex-col p-6 rounded-2xl border bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 border-blue-600 shadow-xl shadow-blue-600/10 scale-[1.02] z-10">
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 whitespace-nowrap shadow-md shadow-blue-200">
-        <Sparkles size={8} className="fill-white" /> {variant.badge}
+    <div style={{
+      position: "relative", display: "flex", flexDirection: "column", padding: "24px 28px",
+      background: T.surface, borderRadius: 8, border: `2px solid ${T.primaryContainer}`,
+      boxShadow: "0px 20px 48px rgba(19,27,46,0.1)", transform: "scale(1.03)",
+      zIndex: 10, transition: "box-shadow 0.25s",
+    }}
+      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0px 28px 56px rgba(19,27,46,0.16)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0px 20px 48px rgba(19,27,46,0.1)"; }}
+    >
+      {/* Most Popular badge */}
+      <div style={{
+        position: "absolute", top: -13, left: "50%", transform: "translateX(-50%)",
+        background: T.primaryContainer, color: T.onPrimary, padding: "4px 12px",
+        borderRadius: 999, fontFamily: T.fontBody, fontSize: 8, fontWeight: 700,
+        letterSpacing: "0.14em", textTransform: "uppercase",
+        display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap",
+        boxShadow: "0 4px 12px rgba(19,27,46,0.2)",
+      }}>
+        <Sparkles size={9} style={{ fill: T.onPrimary }} /> {variant.badge}
       </div>
 
-      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{plan.name}</h3>
+      {/* Plan name */}
+      <span style={{ fontFamily: T.fontBody, fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: T.onPrimaryContainer, display: "block", marginBottom: 14, marginTop: 4 }}>
+        {plan.name}
+      </span>
 
       <BillingToggle isYearly={isYearly} onToggle={setIsYearly} t={t} />
 
-      <div className="flex items-baseline gap-1 mb-1">
-        <span className="text-3xl font-black text-slate-900 tracking-tighter">{variant.price}</span>
-        <span className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">{variant.period}</span>
+      {/* Price */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 2, marginBottom: 8 }}>
+        <span style={{ fontFamily: T.fontHeadline, fontSize: 36, fontWeight: 700, lineHeight: 1, letterSpacing: "-0.02em", color: T.onSurface }}>
+          {variant.price?.replace("₾", "")}
+        </span>
+        <span style={{ fontFamily: T.fontHeadline, fontSize: 18, fontWeight: 600, color: T.onSurface }}>₾</span>
+        <span style={{ fontFamily: T.fontBody, fontSize: 9, fontWeight: 600, color: T.onSurfaceVariant, letterSpacing: "0.08em", textTransform: "uppercase", marginLeft: 4 }}>
+          {variant.period}
+        </span>
       </div>
 
-      <p className="text-xs text-slate-500 mb-5 font-medium leading-relaxed">{variant.description}</p>
+      <p style={{ fontFamily: T.fontBody, fontSize: 12, color: T.onSurfaceVariant, lineHeight: 1.6, marginBottom: 18 }}>
+        {variant.description}
+      </p>
 
       {renderCta()}
 
-      <ul className="space-y-2.5 flex-1">
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
         {plan.features.map((f, i) => (
-          <li key={i} className="flex items-start gap-2 text-[11px] font-medium">
-            <div className="mt-0.5 shrink-0">
-              {f.included ? (
-                <Check size={11} className="text-blue-600" strokeWidth={3} />
-              ) : (
-                <X size={11} className="text-slate-200" strokeWidth={3} />
-              )}
-            </div>
-            <span className={f.included ? "text-slate-600" : "text-slate-300 line-through"}>{f.text}</span>
-          </li>
+          <FeatureItem key={i} text={f.text} included={f.included} filled />
         ))}
       </ul>
     </div>
   );
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 const Pricing = () => {
   const navigate = useNavigate();
   const { user, isTrialActive, trialEligible, daysLeftInTrial, refreshUser } = useAuth();
@@ -345,7 +441,6 @@ const Pricing = () => {
   const [showTrialBanner, setShowTrialBanner] = useState(true);
 
   const currentTier = user?.subscription_tier || "free";
-
   const PLANS = buildPlans(t);
 
   const handleSelect = async (plan) => {
@@ -354,22 +449,16 @@ const Pricing = () => {
       else navigate("/app");
       return;
     }
-    if (!user) {
-      navigate("/signup");
-      return;
-    }
+    if (!user) { navigate("/signup"); return; }
     setLoadingPlan("pay");
     try {
       const response = await api.post("/api/subscriptions/create-checkout/", {
         plan: plan.planName === "Pro Monthly" ? "pro_monthly"
             : plan.planName === "Pro Yearly" ? "pro_yearly"
-            : plan.planName === "Professional Monthly" ? "professional_monthly"
-            : "professional_yearly",
+            : "professional_monthly",
         gateway: "bog",
       });
-      if (response.data.payment_url) {
-        window.location.href = response.data.payment_url;
-      }
+      if (response.data.payment_url) window.location.href = response.data.payment_url;
     } catch {
       showToast({ message: t("pricing.paymentError") });
     } finally {
@@ -406,33 +495,35 @@ const Pricing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.fontBody }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap');
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
       <NavBar />
 
-      <section className="pt-32 pb-16 px-6 relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-100 bg-[radial-gradient(circle_at_center,var(--tw-gradient-from)_0%,transparent_70%)] from-blue-50/40 to-transparent -z-10" />
+      <section style={{ paddingTop: 108, paddingBottom: 72, paddingLeft: 24, paddingRight: 24 }}>
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
 
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2 tracking-tight leading-snug">
+          {/* Hero */}
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <h1 style={{ fontFamily: T.fontHeadline, fontSize: 36, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.2, color: T.onSurface, margin: "0 0 12px" }}>
               {t("pricing.heroTitle")}{" "}
-              <span className="text-blue-600 italic">{t("pricing.heroTitleHighlight")}</span>
+              <em style={{ fontStyle: "italic", color: T.onPrimaryContainer }}>{t("pricing.heroTitleHighlight")}</em>
             </h1>
-            <p className="text-slate-500 text-sm font-medium max-w-md mx-auto">
-              {t("pricing.heroSubtitle")} <br />
-              {t("pricing.heroSubtitleLine2")}
+            <p style={{ fontFamily: T.fontBody, fontSize: 14, color: T.onSurfaceVariant, lineHeight: 1.7, margin: 0, opacity: 0.85 }}>
+              {t("pricing.heroSubtitle")}<br />{t("pricing.heroSubtitleLine2")}
             </p>
           </div>
 
+          {/* Trial banner */}
           {isTrialActive && showTrialBanner && daysLeftInTrial > 0 && (
-            <TrialBanner
-              daysLeft={daysLeftInTrial}
-              onDismiss={() => setShowTrialBanner(false)}
-              t={t}
-            />
+            <TrialBanner daysLeft={daysLeftInTrial} onDismiss={() => setShowTrialBanner(false)} t={t} />
           )}
 
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          {/* Plan cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, alignItems: "stretch" }}>
             {PLANS.map((plan) =>
               plan.key === "pro" ? (
                 <ProPlanCard
@@ -461,30 +552,50 @@ const Pricing = () => {
             )}
           </div>
 
-          <div className="mt-12 text-center p-8 border border-slate-100 rounded-2xl bg-slate-50/50 max-w-2xl mx-auto">
-            <h3 className="text-base font-black text-slate-900 mb-2 tracking-tight">
+          {/* Enterprise */}
+          <div style={{
+            marginTop: 44, padding: "28px 36px",
+            ...glassCard,
+            maxWidth: 560, marginLeft: "auto", marginRight: "auto",
+            textAlign: "center",
+          }}>
+            <h3 style={{ fontFamily: T.fontHeadline, fontSize: 18, fontWeight: 600, color: T.onSurface, margin: "0 0 8px" }}>
               {t("pricing.enterpriseTitle")}
             </h3>
-            <p className="text-slate-500 font-medium text-xs mb-6 leading-relaxed">
-              {t("pricing.enterpriseDesc")} <br />
-              {t("pricing.enterpriseDescLine2")}
+            <p style={{ fontFamily: T.fontBody, fontSize: 12, color: T.onSurfaceVariant, lineHeight: 1.7, margin: "0 0 20px" }}>
+              {t("pricing.enterpriseDesc")}<br />{t("pricing.enterpriseDescLine2")}
             </p>
             <a
               href="mailto:hello@nebulacv.ge"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-md shadow-slate-200"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "9px 22px", borderRadius: 6, background: T.primaryContainer,
+                color: T.onPrimary, fontFamily: T.fontBody, fontSize: 9,
+                fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase",
+                textDecoration: "none", transition: "background 0.15s",
+                boxShadow: "0 4px 14px rgba(19,27,46,0.16)",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = T.primary; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = T.primaryContainer; }}
             >
               {t("pricing.enterpriseCta")}
             </a>
           </div>
 
-          <div className="mt-10 text-center">
-            <div className="inline-flex items-center gap-2 px-5 py-2 bg-white rounded-full border border-slate-100 shadow-sm">
-              <Zap size={12} className="text-blue-600 fill-blue-600" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          {/* Trial badge */}
+          <div style={{ marginTop: 28, textAlign: "center" }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              padding: "7px 16px", background: T.surface, borderRadius: 999,
+              border: `1px solid ${T.outlineVariant}`, boxShadow: "0 2px 8px rgba(19,27,46,0.05)",
+            }}>
+              <Zap size={11} style={{ color: T.primaryContainer, fill: T.primaryContainer }} />
+              <span style={{ fontFamily: T.fontBody, fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.onSurfaceVariant }}>
                 {t("pricing.trialBadge")}
               </span>
             </div>
           </div>
+
         </div>
       </section>
     </div>

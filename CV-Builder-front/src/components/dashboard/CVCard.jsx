@@ -1,160 +1,114 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileEdit, Copy, Clock, Trash2, Archive, ArchiveRestore, Tag, AlertTriangle } from "lucide-react";
+import {
+  Copy, Trash2, Archive, ArchiveRestore, Tag, AlertTriangle,
+  MoreVertical, ArrowRight,
+} from "lucide-react";
 import LabelPill from "./LabelPill";
 import LabelPopover from "./LabelPopover";
 import LivePreview from "../classic-template/LivePreview";
 import EuropassPreview from "../europass-template/EuropassPreview";
 
-// Normalize resume data: API may return cv_data nested or flat personalInfo/sections
+const T = {
+  surface: "#ffffff",
+  surfaceLow: "#f2f4f6",
+  surfaceContainer: "#eceef0",
+  primary: "#000000",
+  onPrimary: "#ffffff",
+  onSurface: "#191c1e",
+  onSurfaceVariant: "#45464d",
+  outline: "#76777d",
+  outlineVariant: "rgba(198,198,205,0.25)",
+  secondary: "#545f73",
+  error: "#ba1a1a",
+  gold: "#B48C4F",
+  fontBody: "'Inter', -apple-system, sans-serif",
+  fontHeadline: "'Playfair Display', Georgia, serif",
+};
+
 const getCvData = (resume) => {
   if (resume.cv_data && (resume.cv_data.personal_info || resume.cv_data.personalInfo || (resume.cv_data.sections && resume.cv_data.sections.length > 0))) {
     return resume.cv_data;
   }
-  // Flat shape (e.g. from mock/legacy API)
   const raw = resume.personalInfo || resume.personal_info || {};
-  const personalInfo = {
-    ...raw,
-    fullName: raw.fullName || raw.full_name,
-  };
+  const personalInfo = { ...raw, fullName: raw.fullName || raw.full_name };
   const sections = resume.sections || [];
-  if (personalInfo.fullName || sections.length > 0) {
-    return { personalInfo, personal_info: personalInfo, sections };
-  }
+  if (personalInfo.fullName || sections.length > 0) return { personalInfo, personal_info: personalInfo, sections };
   return {};
 };
 
-// ── Mini Resume Preview Thumbnail ──────────────────────────────────────────
-// Renders the actual resume template at a tiny scale inside the card.
-// The outer container is sized to match an A4 aspect ratio (3:4.24),
-// and the inner resume (210mm wide) is scaled down to fit.
+// ── Resume Thumbnail ──────────────────────────────────────────────────────────
 const ResumeThumb = ({ resume }) => {
   const isEuropass = resume.template === "europass" || resume.template === "modern";
   const cvData = getCvData(resume);
-
-  // The resume preview is designed for 210mm (~794px) wide.
-  // We want to display it in a container that's roughly 280px wide (the card).
-  // Scale factor: 280 / 794 ≈ 0.352
   const PREVIEW_WIDTH = 794;
-  const SCALE = 0.352;
+  const containerRef = useRef(null);
+  const [scale, setScale] = useState(0.35);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setScale(entry.contentRect.width / PREVIEW_WIDTH);
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // Full A4 page height
+  const containerHeight = PREVIEW_WIDTH * scale * 1.414;
 
   return (
-    <div
-      className="w-full overflow-hidden rounded-sm bg-white"
-      style={{
-        // A4 aspect ratio at scaled size
-        height: `${PREVIEW_WIDTH * SCALE * 1.414}px`,
-        position: "relative",
-      }}
-    >
-      {/* Prevent any clicks/hovers from interfering */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: `${PREVIEW_WIDTH}px`,
-          transformOrigin: "top left",
-          transform: `scale(${SCALE})`,
-          pointerEvents: "none",
-          userSelect: "none",
-        }}
-      >
-        {isEuropass ? (
-          <EuropassPreview data={cvData} />
-        ) : (
-          // LivePreview wraps content in a centered flex container with extra padding.
-          // We pass zoom=1 and strip the outer wrapper by targeting only the inner div.
-          <LivePreviewRaw data={cvData} />
-        )}
+    <div ref={containerRef} style={{ width: "100%", overflow: "hidden", background: "#fff", height: `${containerHeight}px`, position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, width: `${PREVIEW_WIDTH}px`, transformOrigin: "top left", transform: `scale(${scale})`, pointerEvents: "none", userSelect: "none" }}>
+        {isEuropass ? <EuropassPreview data={cvData} /> : <div style={{ width: 794 }}><LivePreview data={cvData} /></div>}
       </div>
     </div>
   );
 };
 
-// LivePreview has a centering wrapper + padding we don't want in the thumb.
-// This strips it to just render the A4 page directly.
-const LivePreviewRaw = ({ data }) => {
-  if (!data) return null;
-  // Reuse LivePreview but override its outer wrapper styles via a clipping parent
-  return (
-    <div style={{ width: 794 }}>
-      <LivePreview data={data} />
-    </div>
-  );
-};
-
-// ── Main CVCard ─────────────────────────────────────────────────────────────
-const CVCard = ({
-  resume,
-  tab,
-  isPro,
-  labels,
-  onDelete,
-  onDuplicate,
-  onArchive,
-  onUnarchive,
-  onLabelUpdate,
-  t,
-}) => {
+// ── CVCard ─────────────────────────────────────────────────────────────────────
+const CVCard = ({ resume, tab, isPro, labels, onDelete, onDuplicate, onArchive, onUnarchive, onLabelUpdate, t }) => {
   const navigate = useNavigate();
   const [labelPopoverOpen, setLabelPopoverOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const labelAnchorRef = useRef(null);
+  const menuRef = useRef(null);
 
   const openEditor = () => navigate(`/app/builder/${resume.template}/${resume.id}`);
 
-  const handleDeleteClick = (e) => {
-    e.stopPropagation();
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDelete = () => {
-    onDelete(resume.id);
-    setShowDeleteConfirm(false);
-  };
-
-  // Decide whether we have enough data to show a real preview
   const cvData = getCvData(resume);
   const hasPreviewData = !!(
-    cvData.personal_info?.fullName ||
-    cvData.personal_info?.full_name ||
-    cvData.personalInfo?.fullName ||
-    cvData.personalInfo?.full_name ||
+    cvData.personal_info?.fullName || cvData.personal_info?.full_name ||
+    cvData.personalInfo?.fullName || cvData.personalInfo?.full_name ||
     (cvData.sections && cvData.sections.length > 0)
   );
 
+  const isEuropass = resume.template === "europass" || resume.template === "modern";
+  const previewBg = isEuropass ? "#1e293b" : T.surfaceLow;
+
   return (
     <>
-      {/* ── DELETE MODAL ── */}
+      {/* DELETE MODAL */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setShowDeleteConfirm(false)}
-          />
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100">
-            <div className="p-8 text-center">
-              <div className="mx-auto w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mb-5 rotate-3">
-                <AlertTriangle className="text-red-500" size={28} />
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(25,28,30,0.45)", backdropFilter: "blur(6px)" }} onClick={() => setShowDeleteConfirm(false)} />
+          <div style={{ position: "relative", background: T.surface, borderRadius: 16, boxShadow: "0 32px 80px rgba(0,0,0,0.12)", width: "100%", maxWidth: 360, border: `1px solid ${T.outlineVariant}`, overflow: "hidden", fontFamily: T.fontBody }}>
+            <div style={{ padding: 32, textAlign: "center" }}>
+              <div style={{ margin: "0 auto 20px", width: 52, height: 52, background: "#fff0f0", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <AlertTriangle color={T.error} size={24} />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">{t("dashboard.deleteResumeTitle")}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed mb-8">
+              <h3 style={{ fontFamily: T.fontHeadline, fontSize: 20, fontWeight: 700, color: T.onSurface, marginBottom: 8 }}>{t("dashboard.deleteResumeTitle")}</h3>
+              <p style={{ fontSize: 13, color: T.secondary, lineHeight: 1.6, marginBottom: 28 }}>
                 {t("dashboard.deleteResumeConfirm")}{" "}
-                <span className="font-semibold text-slate-700">"{resume.title || t("dashboard.untitledResume")}"</span>?
-                {" "}{t("dashboard.deleteResumePermanent")}
+                <strong style={{ color: T.onSurface }}>"{resume.title || t("dashboard.untitledResume")}"</strong>?{" "}
+                {t("dashboard.deleteResumePermanent")}
               </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
-                >
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: `1px solid ${T.outlineVariant}`, fontSize: 13, fontWeight: 600, color: T.onSurfaceVariant, background: T.surface, cursor: "pointer", fontFamily: T.fontBody }}>
                   {t("common.cancel")}
                 </button>
-                <button
-                  onClick={confirmDelete}
-                  className="flex-1 px-4 py-3 rounded-2xl bg-red-500 text-sm font-bold text-white hover:bg-red-600 shadow-lg shadow-red-200 transition-all active:scale-95"
-                >
+                <button onClick={() => { onDelete(resume.id); setShowDeleteConfirm(false); }} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 600, color: "#fff", background: T.error, cursor: "pointer", fontFamily: T.fontBody }}>
                   {t("dashboard.delete")}
                 </button>
               </div>
@@ -163,167 +117,203 @@ const CVCard = ({
         </div>
       )}
 
-      {/* ── MAIN CARD ── */}
-      <div className="group relative flex flex-col bg-white rounded-2xl transition-all duration-500 border border-slate-100 hover:border-blue-200 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
-
-        {/* ── PREVIEW AREA ── */}
-        <div className="overflow-hidden rounded-t-2xl">
-          <div
-            onClick={() => tab === "active" && openEditor()}
-            className={`relative bg-[#F3F4F6] ${tab === "active" ? "cursor-pointer" : "cursor-default"}`}
+      {/* MAIN CARD */}
+      <div
+        style={{
+          background: T.surface,
+          borderRadius: 10,
+          border: `1px solid ${T.outlineVariant}`,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "0px 20px 40px -10px rgba(0,0,0,0.04)",
+          transition: "box-shadow 0.3s ease, transform 0.3s ease",
+          fontFamily: T.fontBody,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = "0px 30px 60px -12px rgba(0,0,0,0.08)";
+          e.currentTarget.style.transform = "translateY(-4px)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = "0px 20px 40px -10px rgba(0,0,0,0.04)";
+          e.currentTarget.style.transform = "translateY(0)";
+        }}
+      >
+        {/* PREVIEW AREA */}
+        <div
+          onClick={() => tab === "active" && openEditor()}
+          style={{ position: "relative", background: previewBg, cursor: tab === "active" ? "pointer" : "default", overflow: "hidden" }}
+        >
+          <div style={{ transition: "transform 0.4s ease", transformOrigin: "top" }}
+            onMouseEnter={(e) => { if (tab === "active") e.currentTarget.style.transform = "scale(1.02)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
           >
-            {/* Archived badge */}
-            {tab === "archived" && (
-              <div className="absolute top-3 left-3 z-10 bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest">
-                Archived
-              </div>
-            )}
-
-            {/* ATS score badge */}
-            {resume.ats_score && (
-              <div className="absolute top-3 right-3 z-10 bg-emerald-50 text-emerald-600 px-2 py-1 rounded text-[9px] font-bold border border-emerald-100">
-                ATS: {resume.ats_score}
-              </div>
-            )}
-
-            {/* Actual resume preview or skeleton placeholder */}
-            <div className="transition-transform duration-500 group-hover:scale-[1.02] origin-top">
-              {hasPreviewData ? (
-                <ResumeThumb resume={resume} />
-              ) : (
-                // Fallback skeleton if no data yet
-                <div className="aspect-[3/4.24] flex items-center justify-center bg-[#FBFCFD]">
-                  <div className="w-full h-full p-6">
-                    <div className="h-1 w-16 bg-blue-100 rounded-full mb-4 mx-auto" />
-                    <div className="space-y-2">
-                      {[...Array(8)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="h-0.5 bg-slate-100 rounded-full"
-                          style={{ width: `${60 + Math.sin(i) * 30}%` }}
-                        />
-                      ))}
-                    </div>
+            {hasPreviewData ? (
+              <ResumeThumb resume={resume} />
+            ) : (
+              <div style={{ aspectRatio: "1/1.414", display: "flex", flexDirection: "column", justifyContent: "flex-start", background: previewBg, padding: "20px 18px" }}>
+                {/* Skeleton header */}
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  <div style={{ width: 24, height: 24, background: isEuropass ? "rgba(255,255,255,0.25)" : T.onSurface, borderRadius: 3, flexShrink: 0 }} />
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ height: 5, background: isEuropass ? "rgba(255,255,255,0.3)" : T.outlineVariant, borderRadius: 9999, width: "55%" }} />
+                    <div style={{ height: 3.5, background: isEuropass ? "rgba(255,255,255,0.15)" : "rgba(198,198,205,0.4)", borderRadius: 9999, width: "75%" }} />
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Hover overlay */}
-            {tab === "active" && (
-              <div className="absolute inset-0 bg-white/50 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                <div className="bg-white border border-slate-100 text-slate-900 px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-md">
-                  <FileEdit size={12} className="text-blue-500" />
-                  {t("dashboard.openEditor")}
-                </div>
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} style={{ height: 3, background: isEuropass ? "rgba(255,255,255,0.1)" : "rgba(198,198,205,0.3)", borderRadius: 9999, marginBottom: 7, width: `${55 + Math.sin(i * 1.5) * 35}%` }} />
+                ))}
               </div>
             )}
           </div>
+
+          {/* Hover overlay — "Open Editor" pill */}
+          {tab === "active" && (
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "rgba(255,255,255,0.45)", backdropFilter: "blur(2px)",
+              opacity: 0, transition: "opacity 0.25s",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = 1; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = 0; }}
+            >
+              <div style={{ background: T.surface, border: `1px solid ${T.outlineVariant}`, borderRadius: 9999, padding: "8px 20px", fontSize: 10, fontWeight: 700, color: T.onSurface, textTransform: "uppercase", letterSpacing: "0.12em", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}>
+                Open Editor <ArrowRight size={11} color={T.primary} />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ── CARD FOOTER ── */}
-        <div className="p-5 border-t border-slate-50">
-          <div className="mb-3">
-            <h3 className="text-xs font-bold text-slate-800 truncate tracking-wide mb-1">
-              {resume.title || t("dashboard.untitledResume")}
-            </h3>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[9px] font-medium text-slate-400 uppercase tracking-tighter">
-                <Clock size={10} /> {new Date(resume.updated_at).toLocaleDateString()}
-              </span>
-              <span className="text-[8px] font-bold uppercase tracking-widest text-slate-300">
-                {resume.template}
-              </span>
-            </div>
+        {/* CARD FOOTER */}
+        <div style={{ padding: "11px 12px 12px", borderTop: `1px solid ${T.outlineVariant}` }}>
+
+          {/* Title */}
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: T.onSurface, margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: T.fontBody }}>
+            {resume.title || "Untitled Resume"}
+          </h3>
+
+          {/* Date */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.outline} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span style={{ fontSize: 10, color: T.outline, fontFamily: T.fontBody }}>
+              Updated {new Date(resume.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            </span>
           </div>
 
+          {/* Labels row (if any) */}
           {resume.labels?.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
-              {resume.labels.map((label) => (
-                <LabelPill key={label.id} label={label} />
-              ))}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginBottom: 8 }}>
+              {resume.labels.map((label) => <LabelPill key={label.id} label={label} />)}
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-            <div className="flex gap-3 items-center">
+          {/* Divider */}
+          <div style={{ height: 1, background: T.outlineVariant, margin: "8px 0" }} />
+
+          {/* Actions row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
               {tab === "active" ? (
                 <>
+                  {/* Duplicate */}
                   <button
                     onClick={(e) => { e.stopPropagation(); onDuplicate(resume); }}
-                    className={`text-slate-400 hover:text-blue-500 transition-colors ${!isPro && "opacity-20 cursor-not-allowed"}`}
                     title={isPro ? "Duplicate" : "Upgrade to Duplicate"}
+                    style={{ padding: "5px 6px", background: "none", border: "none", borderRadius: 6, cursor: isPro ? "pointer" : "not-allowed", color: T.outline, opacity: isPro ? 1 : 0.3, display: "flex", transition: "background 0.15s, color 0.15s" }}
+                    onMouseEnter={(e) => { if (isPro) { e.currentTarget.style.color = T.onSurface; e.currentTarget.style.background = T.surfaceContainer; } }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = T.outline; e.currentTarget.style.background = "none"; }}
                   >
-                    <Copy size={14} />
+                    <Copy size={13} />
                   </button>
 
+                  {/* Archive */}
                   <button
                     onClick={(e) => { e.stopPropagation(); onArchive(resume); }}
-                    className="text-slate-400 hover:text-amber-500 transition-colors"
                     title="Archive"
+                    style={{ padding: "5px 6px", background: "none", border: "none", borderRadius: 6, cursor: "pointer", color: T.outline, display: "flex", transition: "background 0.15s, color 0.15s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = T.gold; e.currentTarget.style.background = "rgba(180,140,79,0.08)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = T.outline; e.currentTarget.style.background = "none"; }}
                   >
                     <Archive size={14} />
                   </button>
 
-                  <div ref={labelAnchorRef} className="relative">
+                  {/* Label */}
+                  <div ref={labelAnchorRef} style={{ position: "relative" }}>
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); e.preventDefault(); setLabelPopoverOpen((v) => !v); }}
-                      className={`p-1.5 -m-1.5 rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center ${
-                        labelPopoverOpen
-                          ? "text-purple-600 bg-purple-50"
-                          : "text-slate-400 hover:text-purple-500 hover:bg-purple-50/50"
-                      }`}
-                      title="Manage labels"
+                      title="Labels"
+                      style={{ padding: "5px 6px", background: "none", border: "none", borderRadius: 6, cursor: "pointer", color: labelPopoverOpen ? T.primary : T.outline, display: "flex", transition: "background 0.15s, color 0.15s" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = T.onSurface; e.currentTarget.style.background = T.surfaceContainer; }}
+                      onMouseLeave={(e) => { if (!labelPopoverOpen) { e.currentTarget.style.color = T.outline; e.currentTarget.style.background = "none"; } }}
                     >
                       <Tag size={14} />
                     </button>
                     {labelPopoverOpen && (
-                      <LabelPopover
-                        cvId={resume.id}
-                        cvLabels={resume.labels || []}
-                        allLabels={labels}
-                        anchorRef={labelAnchorRef}
-                        onUpdate={onLabelUpdate}
-                        onClose={() => setLabelPopoverOpen(false)}
-                      />
+                      <LabelPopover cvId={resume.id} cvLabels={resume.labels || []} allLabels={labels} anchorRef={labelAnchorRef} onUpdate={onLabelUpdate} onClose={() => setLabelPopoverOpen(false)} />
                     )}
                   </div>
 
+                  {/* Delete */}
                   <button
-                    onClick={handleDeleteClick}
-                    className="text-slate-300 hover:text-red-400 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }}
                     title="Delete"
+                    style={{ padding: "5px 6px", background: "none", border: "none", borderRadius: 6, cursor: "pointer", color: T.outline, display: "flex", transition: "background 0.15s, color 0.15s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = T.error; e.currentTarget.style.background = "rgba(186,26,26,0.06)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = T.outline; e.currentTarget.style.background = "none"; }}
                   >
                     <Trash2 size={14} />
                   </button>
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onUnarchive(resume); }}
-                    className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 hover:text-amber-700 transition-colors"
-                  >
-                    <ArchiveRestore size={14} /> Restore
+                  <button onClick={(e) => { e.stopPropagation(); onUnarchive(resume); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, color: "#92400e", background: "none", border: "none", cursor: "pointer", padding: "5px 6px", borderRadius: 6, transition: "background 0.15s" }} onMouseEnter={(e) => e.currentTarget.style.background = "rgba(146,64,14,0.07)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>
+                    <ArchiveRestore size={13} /> Restore
                   </button>
-                  <button
-                    onClick={handleDeleteClick}
-                    className="text-slate-300 hover:text-red-400 transition-colors"
-                    title="Delete permanently"
-                  >
-                    <Trash2 size={14} />
+                  <button onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }} style={{ padding: "5px 6px", background: "none", border: "none", borderRadius: 6, cursor: "pointer", color: T.outline, display: "flex", transition: "background 0.15s, color 0.15s" }} onMouseEnter={(e) => { e.currentTarget.style.color = T.error; e.currentTarget.style.background = "rgba(186,26,26,0.06)"; }} onMouseLeave={(e) => { e.currentTarget.style.color = T.outline; e.currentTarget.style.background = "none"; }}>
+                    <Trash2 size={13} />
                   </button>
                 </>
               )}
             </div>
 
+            {/* More / Edit */}
             {tab === "active" && (
-              <button
-                onClick={openEditor}
-                className="text-blue-500 font-bold text-[10px] uppercase tracking-widest hover:text-blue-700 transition-colors"
-              >
-                Edit →
-              </button>
+              <div ref={menuRef} style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+                  style={{ padding: "5px 6px", background: "none", border: "none", borderRadius: 6, cursor: "pointer", color: T.outline, display: "flex", transition: "background 0.15s, color 0.15s" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = T.onSurface; e.currentTarget.style.background = T.surfaceContainer; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = T.outline; e.currentTarget.style.background = "none"; }}
+                >
+                  <MoreVertical size={14} />
+                </button>
+                {menuOpen && (
+                  <div
+                    style={{ position: "absolute", right: 0, bottom: "calc(100% + 6px)", background: T.surface, border: `1px solid ${T.outlineVariant}`, borderRadius: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.08)", zIndex: 20, minWidth: 140, overflow: "hidden", fontFamily: T.fontBody }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button onClick={() => { setMenuOpen(false); openEditor(); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 13px", background: "none", border: "none", fontSize: 12, fontWeight: 600, color: T.onSurface, cursor: "pointer", textAlign: "left" }}>
+                      <ArrowRight size={12} /> Open Editor
+                    </button>
+                    <div style={{ height: 1, background: T.surfaceLow }} />
+                    <button onClick={() => { setMenuOpen(false); onDuplicate(resume); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 13px", background: "none", border: "none", fontSize: 12, fontWeight: 500, color: isPro ? T.onSurface : T.outline, cursor: isPro ? "pointer" : "not-allowed", opacity: isPro ? 1 : 0.4, textAlign: "left" }}>
+                      <Copy size={12} /> Duplicate
+                    </button>
+                    <button onClick={() => { setMenuOpen(false); onArchive(resume); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 13px", background: "none", border: "none", fontSize: 12, fontWeight: 500, color: T.onSurface, cursor: "pointer", textAlign: "left" }}>
+                      <Archive size={12} /> Archive
+                    </button>
+                    <div style={{ height: 1, background: T.surfaceLow }} />
+                    <button onClick={() => { setMenuOpen(false); setShowDeleteConfirm(true); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 13px", background: "none", border: "none", fontSize: 12, fontWeight: 500, color: T.error, cursor: "pointer", textAlign: "left" }}>
+                      <Trash2 size={12} /> Delete
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
