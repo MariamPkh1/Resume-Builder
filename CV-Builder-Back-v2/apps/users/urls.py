@@ -8,6 +8,8 @@ from .auth_views import (
     GoogleAuthAPIView,
     MeAPIView,
     LogoutAPIView,
+    ChangePasswordAPIView,
+    DeleteAccountAPIView,
 )
 
 urlpatterns = [
@@ -20,4 +22,6 @@ urlpatterns = [
     path("auth/me/", MeAPIView.as_view(), name="auth_me"),
     path("auth/profile/", MeAPIView.as_view(), name="auth_profile"),
     path("auth/logout/", LogoutAPIView.as_view(), name="auth_logout"),
+    path("auth/change-password/", ChangePasswordAPIView.as_view(), name="auth_change_password"),
+    path("auth/delete-account/", DeleteAccountAPIView.as_view(), name="auth_delete_account"),
 ]

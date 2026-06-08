@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   FileText, User, CreditCard, HelpCircle, LogOut,
@@ -137,12 +137,15 @@ const Settings = () => {
   const [location, setLocation]     = useState("");
   const [prefLang, setPrefLang]     = useState("en");
   const [saving, setSaving]         = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const [currentPw, setCurrentPw]   = useState("");
   const [newPw, setNewPw]           = useState("");
   const [confirmPw, setConfirmPw]   = useState("");
   const [pwSaving, setPwSaving]     = useState(false);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword]   = useState("");
+  const [deleting, setDeleting]               = useState(false);
 
   // search props for DashboardHeader
   const [search, setSearch] = useState("");
@@ -157,7 +160,7 @@ const Settings = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    setSaving(true); setSaveSuccess(false);
+    setSaving(true);
     try {
       await api.patch("/api/auth/me/", {
         full_name: fullName.trim() || undefined,
@@ -167,8 +170,7 @@ const Settings = () => {
       if (fullName.trim()) localStorage.setItem("display_name", fullName.trim());
       setLanguage(prefLang);
       await refreshUser();
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      showToast({ message: t("settings.saveChanges") });
     } catch {
       showToast({ message: t("settings.failedSave") });
     } finally {
@@ -192,6 +194,19 @@ const Settings = () => {
   };
 
   const handleLogout = () => { logout(); navigate("/"); };
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) { showToast({ message: t("settings.fillPasswordFields") }); return; }
+    setDeleting(true);
+    try {
+      await api.delete("/api/auth/delete-account/", { data: { password: deletePassword } });
+      logout();
+    } catch (err) {
+      showToast({ message: err.response?.data?.detail || t("settings.deleteFailed") });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const sectionStyle = {
     background: "rgba(255,255,255,0.75)",
@@ -358,6 +373,7 @@ const Settings = () => {
                 </div>
                 <button
                   type="button"
+                  onClick={() => setShowDeleteModal(true)}
                   style={{ background: "transparent", color: T.error, border: `1px solid rgba(186,26,26,0.2)`, borderRadius: 4, padding: "9px 18px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.fontBody, display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap", flexShrink: 0 }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(186,26,26,0.05)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
@@ -394,6 +410,47 @@ const Settings = () => {
           </form>
         </main>
       </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 10, padding: "28px 28px 24px", width: "100%", maxWidth: 400, fontFamily: T.fontBody }}>
+            <h3 style={{ fontFamily: T.fontHeadline, fontSize: 18, fontWeight: 700, color: T.error, margin: "0 0 8px" }}>
+              {t("settings.deleteAccount")}
+            </h3>
+            <p style={{ fontSize: 13, color: T.onSurfaceVariant, margin: "0 0 20px", lineHeight: 1.6 }}>
+              {t("settings.deleteConfirmDesc")}
+            </p>
+            <Field label={t("settings.confirmWithPassword")}>
+              <input
+                style={{ ...inputBase, marginBottom: 20 }}
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="••••••••"
+                autoFocus
+              />
+            </Field>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
+              <button
+                type="button"
+                onClick={() => { setShowDeleteModal(false); setDeletePassword(""); }}
+                style={{ background: "transparent", border: `1px solid ${T.outlineVariant}`, borderRadius: 4, padding: "8px 18px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.fontBody, color: T.onSurfaceVariant }}
+              >
+                {t("settings.cancelChanges")}
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                style={{ background: T.error, color: "#fff", border: "none", borderRadius: 4, padding: "8px 18px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.fontBody, display: "flex", alignItems: "center", gap: 6, opacity: deleting ? 0.6 : 1 }}
+              >
+                {deleting ? <><Loader2 size={13} style={{ animation: "spin 0.8s linear infinite" }} /> {t("settings.deleting")}</> : <><Trash2 size={13} /> {t("settings.confirmDelete")}</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

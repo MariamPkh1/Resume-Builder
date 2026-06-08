@@ -629,6 +629,11 @@ const translations = {
     "settings.passwordMismatch": "New passwords do not match.",
     "settings.passwordUpdated": "Password updated successfully.",
     "settings.passwordFailed": "Password update failed.",
+    "settings.deleteConfirmDesc": "This will permanently delete your account and all your resumes. This action cannot be undone.",
+    "settings.confirmWithPassword": "Confirm with your password",
+    "settings.confirmDelete": "Delete My Account",
+    "settings.deleting": "Deleting…",
+    "settings.deleteFailed": "Failed to delete account. Please try again.",
 
   },
   
@@ -1246,6 +1251,11 @@ const translations = {
     "settings.passwordMismatch": "ახალი პაროლები არ ემთხვევა.",
     "settings.passwordUpdated": "პაროლი წარმატებით განახლდა.",
     "settings.passwordFailed": "პაროლის განახლება ვერ მოხერხდა.",
+    "settings.deleteConfirmDesc": "ეს სამუდამოდ წაშლის თქვენს ანგარიშს და ყველა რეზიუმეს. ეს მოქმედება შეუქცევადია.",
+    "settings.confirmWithPassword": "დაადასტურეთ პაროლით",
+    "settings.confirmDelete": "ანგარიშის წაშლა",
+    "settings.deleting": "იშლება…",
+    "settings.deleteFailed": "ანგარიშის წაშლა ვერ მოხერხდა. სცადეთ თავიდან.",
 
   },
 };
